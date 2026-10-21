@@ -1,0 +1,156 @@
+/* Öffentliche Webseite von ARTLENN MEDIA */
+
+.rahmen { width: 100%; max-width: var(--breite); margin: 0 auto; padding: 0 24px; }
+@media (max-width: 600px) { .rahmen { padding: 0 16px; } }
+
+/* Kopfleiste */
+.kopf {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in srgb, var(--grund) 88%, transparent);
+  -webkit-backdrop-filter: saturate(160%) blur(14px); backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s ease;
+}
+.kopf.gerollt { border-bottom-color: var(--linie); }
+.kopf .rahmen { display: flex; align-items: center; justify-content: space-between; gap: 24px; height: 72px; }
+.kopf nav { display: flex; align-items: center; gap: 4px; }
+.kopf nav a:not(.knopf) {
+  color: var(--schrift-2); text-decoration: none; font-weight: 500; font-size: 15px;
+  padding: 10px 14px; border-radius: 999px; transition: color .16s ease, background-color .16s ease;
+}
+.kopf nav a:not(.knopf):hover { color: var(--schrift); background: var(--flaeche-2); }
+.kopf nav .knopf { margin-left: 10px; min-height: 42px; padding: 0 18px; }
+.menue-knopf { display: none; }
+
+@media (max-width: 860px) {
+  .kopf .rahmen { height: 64px; }
+  .marke img { height: 26px; }
+  .marke b { font-size: 15px; }
+  .menue-knopf {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 46px; height: 46px; border: 0; background: transparent; border-radius: 999px; cursor: pointer;
+  }
+  .menue-knopf svg { width: 26px; height: 26px; }
+  .kopf nav {
+    position: absolute; left: 0; right: 0; top: 64px;
+    flex-direction: column; align-items: stretch; gap: 0;
+    background: var(--grund); border-bottom: 1px solid var(--linie);
+    padding: 8px 16px 20px;
+    opacity: 0; transform: translateY(-6px); pointer-events: none; visibility: hidden;
+    transition: opacity .18s ease, transform .18s ease, visibility 0s linear .18s;
+  }
+  .kopf.offen nav { opacity: 1; transform: none; pointer-events: auto; visibility: visible; transition: opacity .18s ease, transform .18s ease; }
+  .kopf nav a:not(.knopf) { padding: 14px 4px; border-radius: 0; border-bottom: 1px solid var(--linie); font-size: 17px; }
+  .kopf nav .knopf { margin: 16px 0 0; }
+}
+
+/* Einstieg */
+.einstieg { padding: 72px 0 64px; }
+.einstieg .rahmen { display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
+.einstieg h1 {
+  margin: 0 0 22px; font-size: clamp(36px, 5.4vw, 60px); line-height: 1.06;
+  letter-spacing: -.025em; font-weight: 700; text-wrap: balance;
+}
+.einstieg p { margin: 0 0 32px; font-size: 19px; color: var(--schrift-2); max-width: 34em; }
+.einstieg .knoepfe { display: flex; flex-wrap: wrap; gap: 12px; }
+.einstieg .bild { justify-self: center; width: 100%; max-width: 440px; height: auto; }
+@media (max-width: 860px) {
+  .einstieg { padding: 40px 0 48px; }
+  .einstieg .rahmen { grid-template-columns: 1fr; gap: 36px; }
+  .einstieg .bild { order: -1; max-width: 180px; justify-self: start; }
+  .einstieg p { font-size: 17px; }
+}
+
+/* Abschnitte */
+.abschnitt { padding: 88px 0; border-top: 1px solid var(--linie); }
+.abschnitt h2 { margin: 0 0 14px; font-size: clamp(28px, 3.4vw, 38px); line-height: 1.15; letter-spacing: -.02em; font-weight: 700; }
+.abschnitt .vorspann { margin: 0 0 48px; color: var(--schrift-2); font-size: 18px; max-width: 40em; }
+@media (max-width: 600px) { .abschnitt { padding: 60px 0; } .abschnitt .vorspann { margin-bottom: 32px; font-size: 16px; } }
+
+/* Leistungen: Liste mit Farbstrich wie im Logo, keine Kästen */
+.leistungen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 44px 40px; margin: 0; padding: 0; list-style: none; }
+.leistungen li { border-top: 4px solid var(--farbe, var(--petrol)); padding-top: 20px; }
+.leistungen h3 { margin: 0 0 8px; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+.leistungen p { margin: 0 0 14px; color: var(--schrift-2); }
+.leistungen ul { margin: 0; padding: 0; list-style: none; font-size: 15px; }
+.leistungen ul li { border: 0; padding: 3px 0 3px 22px; position: relative; }
+.leistungen ul li::before { content: "→"; position: absolute; left: 0; color: var(--schrift-3); }
+.leistungen a { font-weight: 600; }
+@media (max-width: 960px) { .leistungen { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .leistungen { grid-template-columns: 1fr; gap: 36px; } }
+
+/* Arbeiten */
+.arbeit { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; align-items: start; }
+.arbeit + .arbeit { margin-top: 72px; }
+/* Drei echte Handy-Bildschirmfotos, gleich groß nebeneinander, ohne Gerät drumherum */
+.handybilder { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 0; }
+.handybilder figure { margin: 0; }
+.handybilder img {
+  display: block; width: 100%; height: auto; aspect-ratio: 1 / 2; object-fit: cover; object-position: top;
+  border-radius: 16px; border: 1px solid var(--linie); background: var(--flaeche-2);
+  box-shadow: 0 1px 2px rgba(34,42,49,.05), 0 10px 28px -14px rgba(34,42,49,.22);
+}
+.handybilder figcaption { margin-top: 10px; font-size: 14px; color: var(--schrift-3); text-align: center; }
+@media (max-width: 600px) { .handybilder { gap: 10px; } .handybilder img { border-radius: 12px; } .handybilder figcaption { font-size: 13px; } }
+.arbeit h3 { margin: 0 0 10px; font-size: 24px; letter-spacing: -.015em; }
+.arbeit p { margin: 0 0 16px; color: var(--schrift-2); }
+.arbeit dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; margin: 0 0 20px; font-size: 15px; }
+.arbeit dt { color: var(--schrift-3); }
+.arbeit dd { margin: 0; }
+@media (max-width: 860px) { .arbeit { grid-template-columns: 1fr; gap: 28px; } }
+
+/* Instagram: gleiche Zeilen wie im Kontakt, jedes Konto genau gleich aufgebaut */
+.konten-kopf { margin: 80px 0 20px; }
+.konten-kopf h3 { margin: 0 0 6px; font-size: 24px; letter-spacing: -.015em; }
+.konten-kopf p { margin: 0; color: var(--schrift-2); }
+.konten { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--linie); }
+.konten a {
+  display: grid; grid-template-columns: 44px minmax(0, 1.1fr) minmax(0, 1.4fr) auto; align-items: center; gap: 18px;
+  padding: 18px 8px; border-bottom: 1px solid var(--linie); color: var(--schrift); text-decoration: none;
+  transition: background-color .16s ease;
+}
+.konten li:first-child a { border-top: 0; }
+.konten a:hover { background: var(--flaeche-2); }
+.konten .ig {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--petrol) 16%, transparent); color: var(--link);
+}
+.konten .ig svg { width: 22px; height: 22px; }
+.konten .name { font-weight: 600; font-size: 17px; overflow-wrap: anywhere; }
+.konten .was { color: var(--schrift-2); font-size: 15px; }
+.konten .pfeil { color: var(--link); font-weight: 600; font-size: 15px; white-space: nowrap; }
+@media (max-width: 700px) {
+  .konten a { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 2px 14px; padding: 16px 4px; }
+  .konten .ig { grid-row: span 2; }
+  .konten .was { grid-column: 2; grid-row: 2; font-size: 14px; }
+  .konten .pfeil { grid-column: 3; grid-row: 1 / span 2; font-size: 0; }
+  .konten .pfeil::after { content: "↗"; font-size: 20px; }
+}
+
+/* Kontakt */
+.kontakt { display: grid; grid-template-columns: 1.1fr .9fr; gap: 56px; align-items: start; }
+.kontakt ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--linie); }
+.kontakt li { display: flex; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--linie); flex-wrap: wrap; }
+.kontakt li span { color: var(--schrift-3); }
+.kontakt li a { font-weight: 600; }
+.kontakt .hinweis { font-size: 15px; color: var(--schrift-3); margin-top: 20px; }
+@media (max-width: 860px) { .kontakt { grid-template-columns: 1fr; gap: 32px; } }
+
+/* Fuß */
+.fuss { border-top: 1px solid var(--linie); padding: 40px 0 48px; font-size: 15px; color: var(--schrift-3); }
+.fuss .rahmen { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
+.fuss nav { display: flex; gap: 20px; flex-wrap: wrap; }
+.fuss a { color: var(--schrift-2); text-decoration: none; }
+.fuss a:hover { color: var(--schrift); text-decoration: underline; }
+
+/* Textseiten (Impressum, Datenschutz) */
+.text { max-width: 720px; padding: 56px 0 80px; }
+.text h1 { font-size: clamp(30px, 4vw, 40px); letter-spacing: -.02em; line-height: 1.15; margin: 0 0 28px; }
+.text h2 { font-size: 20px; margin: 36px 0 8px; }
+.text p, .text li { color: var(--schrift-2); }
+
+/* Sanftes Einblenden beim Scrollen, nur wenn erlaubt */
+@media (prefers-reduced-motion: no-preference) {
+  .js .zeigen { opacity: 0; transform: translateY(14px); transition: opacity .5s cubic-bezier(.2,.7,.2,1), transform .5s cubic-bezier(.2,.7,.2,1); }
+  .js .zeigen.da { opacity: 1; transform: none; }
+}

@@ -1,0 +1,126 @@
+/* ARTLENN MEDIA: Farben, Schrift und Grundregeln für Webseite und MeinOrbit.
+   Die Markenfarben sind aus dem Logo abgenommen (2026-10-21). Sie dienen als
+   Flächen und Streifen, nie als Schriftfarbe auf Hell: dafür sind sie zu blass.
+   Für Links und Hervorhebungen gibt es --link (dunkles Petrol, Kontrast über 5:1). */
+
+@font-face { font-family: "Montserrat"; src: url("../fonts/Montserrat-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Montserrat"; src: url("../fonts/Montserrat-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Montserrat"; src: url("../fonts/Montserrat-SemiBold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Montserrat"; src: url("../fonts/Montserrat-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+
+:root {
+  /* Logo-Farben */
+  --petrol: #33A4A5;
+  --petrol-hell: #7FCAC7;
+  --petrol-dunkel: #2D7F81;
+  --pink: #FA7C92;
+  --orange: #FE7F44;
+  --gruen: #A3CC91;
+  --gelb: #FAD156;
+  --himmel: #72C3D8;
+
+  /* Flächen und Schrift */
+  --grund: #FAF8F4;
+  --flaeche: #FFFFFF;
+  --flaeche-2: #F3F0EA;
+  --schrift: #222A31;
+  --schrift-2: #4D565E;
+  --schrift-3: #6B737A;
+  --linie: #E4DFD6;
+  --linie-stark: #CFC8BC;
+  --link: #1F6566;
+  --knopf: #222A31;
+  --knopf-schrift: #FFFFFF;
+  --fokus: #2D7F81;
+  --gut: #2E7D4F;
+  --gut-weich: #E3F1E7;
+  --warn: #9A5B00;
+  --warn-weich: #FBF0DA;
+  --fehler: #B3261E;
+  --fehler-weich: #FBE7E5;
+
+  --schriftart: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --rund: 10px;
+  --rund-klein: 6px;
+  --breite: 1160px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grund: #161A1E;
+    --flaeche: #1E2328;
+    --flaeche-2: #252B31;
+    --schrift: #EEF0F1;
+    --schrift-2: #B9C0C6;
+    --schrift-3: #949CA3;
+    --linie: #323940;
+    --linie-stark: #48515A;
+    --link: #8FD3D1;
+    --knopf: #EEF0F1;
+    --knopf-schrift: #161A1E;
+    --fokus: #8FD3D1;
+    --gut: #8CD3A5;
+    --gut-weich: #1D3127;
+    --warn: #F2C26B;
+    --warn-weich: #362B17;
+    --fehler: #FF9B91;
+    --fehler-weich: #3A1F1D;
+    color-scheme: dark;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--grund);
+  color: var(--schrift);
+  font-family: var(--schriftart);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--link); text-underline-offset: 3px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; border-radius: 4px; }
+
+/* Der Farbstreifen aus dem Logo (unter MEDIA). */
+.streifen { display: flex; height: 6px; }
+.streifen i { flex: 1; }
+.streifen i:nth-child(1) { background: var(--petrol); }
+.streifen i:nth-child(2) { background: var(--petrol-hell); }
+.streifen i:nth-child(3) { background: var(--pink); }
+.streifen i:nth-child(4) { background: var(--orange); }
+.streifen i:nth-child(5) { background: var(--gelb); }
+.streifen i:nth-child(6) { background: var(--gruen); }
+.streifen i:nth-child(7) { background: var(--himmel); }
+.streifen i:nth-child(8) { background: var(--petrol); }
+
+/* Wortmarke als echte Schrift neben dem Zeichen */
+.marke { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: var(--schrift); }
+.marke img { height: 30px; width: auto; }
+.marke b { font-weight: 700; letter-spacing: .14em; font-size: 17px; line-height: 1; }
+.marke b span { font-weight: 500; letter-spacing: .3em; margin-left: .35em; color: var(--schrift-2); }
+
+.knopf {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 46px; padding: 0 22px; border-radius: 999px;
+  background: var(--knopf); color: var(--knopf-schrift);
+  border: 1.5px solid var(--knopf); font-weight: 600; font-size: 15px;
+  text-decoration: none; cursor: pointer;
+  transition: transform .16s ease, background-color .16s ease, color .16s ease;
+}
+.knopf:active { transform: scale(.97); }
+.knopf.zweit { background: transparent; color: var(--schrift); border-color: var(--linie-stark); }
+@media (hover: hover) {
+  .knopf:hover { background: var(--petrol-dunkel); border-color: var(--petrol-dunkel); color: #fff; }
+  .knopf.zweit:hover { background: var(--flaeche-2); color: var(--schrift); border-color: var(--schrift-3); }
+}
+
+.unsichtbar { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+}

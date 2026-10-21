@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>MeinOrbit · ARTLENN MEDIA</title>
+  <meta name="theme-color" content="#FAF8F4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#161A1E" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/img/favicon-64.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="stylesheet" href="assets/css/grund.css">
+  <link rel="stylesheet" href="assets/css/orbit.css">
+</head>
+<body>
+  <div class="app" id="app" hidden>
+    <aside class="leiste">
+      <a class="marke" href="index.html" title="Zur Webseite"><img src="assets/img/zeichen.webp" alt="" width="52" height="26"><b>ARTLENN<span>MEDIA</span></b></a>
+      <nav id="nav" aria-label="MeinOrbit">
+        <a href="#start" data-r="start">Übersicht</a>
+        <a href="#kunden" data-r="kunden">Kunden</a>
+        <a href="#auftraege" data-r="auftraege">Aufträge</a>
+        <a href="#rechnungen" data-r="rechnungen">Rechnungen</a>
+        <a href="#angebote" data-r="angebote">Angebote</a>
+        <a href="#finanzen" data-r="finanzen">Finanzen</a>
+        <a href="#leistungen" data-r="leistungen">Leistungen</a>
+        <a href="#einstellungen" data-r="einstellungen">Einstellungen</a>
+      </nav>
+      <div class="leiste-fuss">
+        <span id="wer"></span>
+        <button type="button" class="link-knopf" id="abmelden">Abmelden</button>
+      </div>
+    </aside>
+    <main class="inhalt" id="inhalt" tabindex="-1"></main>
+  </div>
+  <div class="hinweis-leiste" id="hinweis" role="status" aria-live="polite"></div>
+  <dialog class="dialog" id="dialog"></dialog>
+  <div class="druck" id="druck"></div>
+
+  <script src="assets/js/vendor/supabase.min.js"></script>
+  <script src="assets/js/vendor/qrcode.min.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/daten.js"></script>
+  <script src="assets/js/orbit.js"></script>
+</body>
+</html>

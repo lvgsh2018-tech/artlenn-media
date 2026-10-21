@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Anmelden · ARTLENN MEDIA</title>
+  <meta name="theme-color" content="#FAF8F4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#161A1E" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/img/favicon-64.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="stylesheet" href="assets/css/grund.css">
+  <style>
+    body { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
+    .karte { width: 100%; max-width: 400px; }
+    .karte .marke { margin-bottom: 40px; }
+    h1 { font-size: 28px; letter-spacing: -.02em; margin: 0 0 6px; }
+    .unter { color: var(--schrift-2); margin: 0 0 28px; }
+    label { display: block; font-weight: 600; font-size: 14px; margin: 0 0 6px; }
+    input {
+      width: 100%; min-height: 48px; padding: 0 14px; margin-bottom: 18px;
+      border: 1.5px solid var(--linie-stark); border-radius: var(--rund-klein); background: var(--flaeche); font-size: 16px;
+    }
+    input:focus { outline: none; border-color: var(--fokus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fokus) 25%, transparent); }
+    .knopf { width: 100%; }
+    .meldung { min-height: 24px; margin: 14px 0 0; color: var(--fehler); font-size: 15px; }
+    .beispiel { background: var(--warn-weich); color: var(--schrift); border-radius: var(--rund-klein); padding: 14px 16px; font-size: 15px; margin: 0 0 24px; }
+    .zurueck { display: inline-block; margin-top: 32px; font-size: 15px; }
+    .streifen { position: fixed; left: 0; right: 0; top: 0; }
+  </style>
+</head>
+<body>
+  <div class="streifen" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <main class="karte">
+    <a class="marke" href="index.html"><img src="assets/img/zeichen.webp" alt="" width="60" height="30"><b>ARTLENN<span>MEDIA</span></b></a>
+    <h1>MeinOrbit</h1>
+    <p class="unter">Kunden, Aufträge, Rechnungen und Finanzen.</p>
+    <p class="beispiel" id="beispiel" hidden>Beispielmodus: Noch ist keine Datenbank verbunden. Alles, was du einträgst, bleibt nur in diesem Browser. Passwort beliebig.</p>
+    <form id="form" novalidate>
+      <label for="email">E-Mail</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="pw">Passwort</label>
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <button class="knopf" type="submit" id="los">Anmelden</button>
+      <p class="meldung" id="meldung" role="alert"></p>
+    </form>
+    <a class="zurueck" href="index.html">← Zur Webseite</a>
+  </main>
+  <script src="assets/js/vendor/supabase.min.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/daten.js"></script>
+  <script>
+  (function () {
+    var f = document.getElementById('form'), m = document.getElementById('meldung'), los = document.getElementById('los');
+    if (AMD.modus === 'beispiel') document.getElementById('beispiel').hidden = false;
+    AMD.sitzung().then(function (u) { if (u) location.replace('orbit.html'); });
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = f.email.value.trim(), pw = f.pw.value;
+      if (AMD.modus === 'echt' && (!email || !pw)) { m.textContent = 'Bitte E-Mail und Passwort eingeben.'; return; }
+      m.textContent = ''; los.disabled = true; los.textContent = 'Einen Moment …';
+      AMD.anmelden(email, pw).then(function () { location.replace('orbit.html'); })
+        .catch(function (err) { m.textContent = err.message; los.disabled = false; los.textContent = 'Anmelden'; });
+    });
+  })();
+  </script>
+</body>
+</html>
