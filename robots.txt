@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /anmelden.html
+Disallow: /orbit.html
+
+Sitemap: https://artlenn.de/sitemap.xml
