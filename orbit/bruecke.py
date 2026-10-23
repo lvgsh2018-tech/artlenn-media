@@ -48,8 +48,95 @@ def _sicherung_anlegen(anzahl_behalten=30):
 db.sicherung_anlegen = _sicherung_anlegen
 
 
+# ---- Rechnungsvorlage "ARTLENN" (nur im Browser) -------------------------
+# Logo, Farbstreifen und Schrift der Marke. Inhalt und Aufbau bleiben die der
+# Vorlage "Klar" vom Mac; hier wird nur die Gestaltung darueber gelegt.
+
+import rechnung as rg       # noqa: E402
+
+ADRESSE = ""                # https://artlenn.de, setzt bruecke.js
+_STREIFEN = ["#33A4A5", "#7FCAC7", "#FA7C92", "#FE7F44", "#FAD156", "#A3CC91", "#72C3D8", "#33A4A5"]
+_mac_stil = rg._stil
+_mac_seite = rg.seite
+_mac_mahnung = rg.mahnung_seite
+
+
+def _artlenn_stil():
+    schrift = "".join(
+        '@font-face{font-family:"Montserrat";src:url("%s/assets/fonts/Montserrat-%s.ttf") format("truetype");'
+        "font-weight:%d;}" % (ADRESSE, name, gewicht)
+        for name, gewicht in (("Regular", 400), ("Medium", 500), ("SemiBold", 600), ("Bold", 700)))
+    schritt = 100.0 / len(_STREIFEN)
+    verlauf = ", ".join("%s %.3f%% %.3f%%" % (f, i * schritt, (i + 1) * schritt)
+                        for i, f in enumerate(_STREIFEN))
+    return schrift + _mac_stil("klar", "#2D7F81") + """
+    :root { --ink:#222A31; --ink-2:#4D565E; --mute:#6B737A; --hair:#E4DFD6; }
+    body { font-family:"Montserrat",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      font-size:10pt; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    html,body { background:#F3F0EA; }
+    .blatt { position:relative; padding-top:24mm; }
+    .blatt::before { content:""; position:absolute; left:0; right:0; top:0; height:4mm;
+      background:linear-gradient(90deg, %(verlauf)s); }
+    .logo img { max-height:22mm; max-width:60mm; }
+    .firma-block b { font-weight:600; }
+    h1 { font-size:20pt; font-weight:600; letter-spacing:-.01em; }
+    table.posten th { border-bottom:1.5px solid #222A31; color:var(--mute); }
+    .pos-bez b { font-weight:600; }
+    .summen .gesamt { border-top:1.5px solid #222A31; font-weight:700; }
+    .hinweis { background:#F5F3EF; border-left:3px solid #33A4A5; }
+    .zahlung { background:#F5F3EF; border-top:0; padding:4mm 5mm; border-radius:2px; }
+    .fuss { border-top:1px solid #CFC8BC; }
+    .entwurf { color:rgba(34,42,49,.05); }
+    .werkzeugleiste .haupt { background:#222A31; border-color:#222A31; }
+    @media print {
+      .blatt { padding:6mm 0 0; }
+      .blatt::before { position:fixed; top:0; }
+    }
+    """ % {"verlauf": verlauf}
+
+
+def _stil(vorlage, akzent):
+    return _artlenn_stil() if vorlage == "artlenn" else _mac_stil(vorlage, akzent)
+
+
+def _mit_logo(e, vorlage):
+    if vorlage == "artlenn" and not e.get("firma_logo") and ADRESSE:
+        e = dict(e, firma_logo=ADRESSE + "/assets/img/logo-voll.png")
+    return e
+
+
+def _seite(rechnung, posten, kunde, e, auftrag=None):
+    vorlage = rechnung.get("vorlage") or e.get("vorlage") or "klar"
+    return _mac_seite(rechnung, posten, kunde, _mit_logo(e, vorlage), auftrag)
+
+
+def _mahnung(rechnung, kunde, e, stufe):
+    return _mac_mahnung(rechnung, kunde, _mit_logo(e, e.get("vorlage") or "klar"), stufe)
+
+
+rg._stil = _stil
+rg.seite = _seite
+rg.mahnung_seite = _mahnung
+
+
+def adresse_setzen(text):
+    global ADRESSE
+    ADRESSE = text.rstrip("/")
+
+
 def vorbereiten():
     db.vorbereiten()
+    # Einmalig (2026-10-23): ARTLENN als Rechnungsvorlage, wie in der ersten Browser-Fassung
+    conn = db.verbindung()
+    try:
+        e = db.einstellungen_lesen(conn)
+        if e.get("web_vorlage_artlenn") != "ja":
+            werte = {"web_vorlage_artlenn": "ja"}
+            if (e.get("vorlage") or "klar") == "klar":
+                werte["vorlage"] = "artlenn"
+            db.einstellungen_schreiben(conn, werte)
+    finally:
+        conn.close()
 
 
 def sicherungen_setzen(text):

@@ -108,6 +108,7 @@
     pyo.runPython("import sys\nsys.path.insert(0, '/programm')");
     await bestandHolen();
     py = pyo.pyimport("bruecke");
+    py.adresse_setzen(location.origin);
     py.vorbereiten();
     await ersteFassungUebernehmen();
     await dateienHolen();

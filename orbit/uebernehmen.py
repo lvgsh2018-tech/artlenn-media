@@ -56,6 +56,11 @@ ANPASSUNGEN = [
         Sicherung, höchstens alle sechs Stunden. Sie liegt getrennt vom Bestand in der Ablage
         der Datenbank. Lade zusätzlich ab und zu die Gesamtausgabe herunter.</div>"""),
     ("Ist das schwarze Fenster noch offen?", "Bitte die Seite neu laden."),
+    # Zusaetzliche Rechnungsvorlage mit Logo und Farben von ARTLENN MEDIA (bruecke.py)
+    ('[["klar", "Klar"], ["klassisch", "Klassisch"], ["kompakt", "Kompakt"]]',
+     '[["artlenn", "ARTLENN"], ["klar", "Klar"], ["klassisch", "Klassisch"], ["kompakt", "Kompakt"]]'),
+    ('[["klar", "Klar – ruhig und modern"],',
+     '[["artlenn", "ARTLENN – Logo und Farben der Marke"], ["klar", "Klar – ruhig und modern"],'),
 ]
 
 
