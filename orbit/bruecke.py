@@ -86,6 +86,7 @@ def _artlenn_stil():
     .hinweis { background:#F5F3EF; border-left:3px solid #33A4A5; }
     .zahlung { background:#F5F3EF; border-top:0; padding:4mm 5mm; border-radius:2px; }
     .fuss { border-top:1px solid #CFC8BC; }
+    .fuss > div:last-child { flex:none; white-space:pre; }
     .entwurf { color:rgba(34,42,49,.05); }
     .werkzeugleiste .haupt { background:#222A31; border-color:#222A31; }
     @media print {
