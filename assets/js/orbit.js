@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  var S = { kunden: [], leistungen: [], auftraege: [], rechnungen: [], ausgaben: [], einnahmen: [], e: {} };
+  var S = { kunden: [], leistungen: [], auftraege: [], rechnungen: [], ausgaben: [], einnahmen: [], zeiten: [], kundenpreise: [], e: {} };
   var inhalt = document.getElementById('inhalt');
   var MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
   var AUFTRAG_STAND = { anfrage: 'Anfrage', angebot: 'Angebot raus', bearbeitung: 'In Arbeit', fertig: 'Fertig', abgerechnet: 'Abgerechnet', abgelehnt: 'Abgelehnt' };
@@ -30,6 +30,8 @@
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function jahr(s) { return String(s || '').slice(0, 4); }
   function istKlein() { return S.e.kleinunternehmer === 'ja'; }
+  function tageZwischen(von, bis) { return Math.round((new Date(bis + 'T12:00') - new Date(von + 'T12:00')) / 86400000); }
+  var MAHNTITEL = { 1: 'Zahlungserinnerung', 2: '1. Mahnung', 3: '2. Mahnung' };
 
   function hinweis(text, fehler) {
     var h = document.getElementById('hinweis');
@@ -174,12 +176,14 @@
       : '<span style="font-weight:500">Netto ' + eur(s.netto) + ' · USt ' + komma(s.satz) + ' % ' + eur(s.steuer) + '</span><span>Gesamt ' + eur(s.brutto) + '</span>';
   }
   /* Bindet einen Positions-Editor an eine Liste; neuZeichnen() malt ihn neu. */
-  function postenBinden(box, posten, neuZeichnen) {
+  function postenBinden(box, posten, neuZeichnen, kundeHolen) {
     function lesen() {
       box.querySelectorAll('tr[data-i]').forEach(function (tr) {
         var p = posten[Number(tr.dataset.i)];
         tr.querySelectorAll('[data-posten]').forEach(function (el) {
           var k = el.dataset.posten;
+          // Ein Eingabefeld verschluckt Zeilenumbrüche: unveränderte Bezeichnung mit Beschreibung behalten
+          if (k === 'bezeichnung' && el.value === String(p[k] || '').replace(/[\r\n]/g, '')) return;
           p[k] = (k === 'menge' || k === 'einzelpreis') ? zahl(el.value) : el.value;
         });
       });
@@ -195,16 +199,27 @@
       var t = e.target.closest('button'); if (!t) return;
       if (t.dataset.weg != null) { lesen(); posten.splice(Number(t.dataset.weg), 1); neuZeichnen(); }
       if (t.hasAttribute('data-neu-posten')) { lesen(); posten.push({ id: uid(), bezeichnung: '', menge: 1, einheit: 'Stück', einzelpreis: 0 }); neuZeichnen(); var l = box.querySelectorAll('tr[data-i] input'); if (l.length) l[l.length - 4].focus(); }
-      if (t.hasAttribute('data-aus-leistung')) { lesen(); leistungWaehlen().then(function (l) { if (!l) return; posten.push({ id: uid(), bezeichnung: l.name + (l.beschreibung ? '\n' + l.beschreibung : ''), menge: 1, einheit: l.einheit || 'Stück', einzelpreis: zahl(l.preis) }); neuZeichnen(); }); }
+      if (t.hasAttribute('data-aus-leistung')) { lesen(); leistungWaehlen(kundeHolen ? kundeHolen() : null).then(function (l) { if (!l) return; posten.push({ id: uid(), bezeichnung: l.name + (l.beschreibung ? '\n' + l.beschreibung : ''), menge: 1, einheit: l.einheit || 'Stück', einzelpreis: preisFuer(kundeHolen ? kundeHolen() : null, l) }); neuZeichnen(); }); }
     });
     return lesen;
   }
-  function leistungWaehlen() {
-    var aktiv = S.leistungen.filter(function (l) { return l.aktiv !== false; }).sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); });
+  /* Eigener Preis des Kunden geht vor dem Listenpreis der Leistung. */
+  function kundenpreis(kundeId, leistung) {
+    if (!kundeId || !leistung) return null;
+    return S.kundenpreise.find(function (p) { return p.kunde_id === Number(kundeId) && p.leistung_id === leistung.id; }) || null;
+  }
+  function preisFuer(kundeId, leistung) { var kp = kundenpreis(kundeId, leistung); return zahl(kp ? kp.preis : leistung.preis); }
+  function leistungWaehlen(kundeId) {
+    var aktiv = S.leistungen.filter(function (l) { return l.aktiv !== false; }).sort(function (a, b) {
+      return (!!kundenpreis(kundeId, b) - !!kundenpreis(kundeId, a)) || a.name.localeCompare(b.name, 'de');
+    });
+    var k = kundeId ? per(S.kunden, kundeId) : null;
     return dialog({
-      titel: 'Leistung wählen',
+      titel: 'Leistung wählen', unter: k && S.kundenpreise.some(function (p) { return p.kunde_id === k.id; }) ? 'Eigene Preise von ' + kundeName(k) + ' stehen oben.' : '',
       html: aktiv.length ? '<ul class="wahl-liste">' + aktiv.map(function (l) {
-        return '<li><button type="button" data-l="' + l.id + '"><span>' + esc(l.name) + '<small>' + esc(l.beschreibung) + '</small></span><b style="white-space:nowrap">' + eur(l.preis) + '</b></button></li>';
+        var kp = kundenpreis(kundeId, l);
+        return '<li><button type="button" data-l="' + l.id + '"><span>' + esc(l.name) + '<small>' + esc(l.beschreibung) + '</small></span><b style="white-space:nowrap;text-align:right">' +
+          (kp ? eur(kp.preis) + '<small style="font-weight:500">Kundenpreis, sonst ' + eur(l.preis) + '</small>' : eur(l.preis)) + '</b></button></li>';
       }).join('') + '</ul>' : '<p class="leer">Noch keine Leistungen angelegt.</p>',
       knoepfe: [{ t: 'Abbrechen', w: '', art: 'zweit' }],
       nachher: function (d, zu) { d.querySelectorAll('[data-l]').forEach(function (b) { b.addEventListener('click', function () { zu('l' + b.dataset.l); }); }); }
@@ -231,7 +246,7 @@
   function belegZeile(r, mitKunde) {
     var k = kundeVon(r);
     return '<tr data-href="beleg/' + r.id + '"><td><a href="#beleg/' + r.id + '">' + esc(r.nummer || 'Entwurf') + '</a>' +
-      (r.typ === 'storno' ? '<span class="neben">Storno</span>' : '') + '</td>' +
+      (r.typ === 'storno' ? '<span class="neben">Storno</span>' : '') + (r.mahnstufe && r.status === 'offen' ? '<span class="neben">' + MAHNTITEL[r.mahnstufe] + ' am ' + datum(r.mahnung_am) + '</span>' : '') + '</td>' +
       (mitKunde ? '<td>' + esc(kundeName(k)) + '</td>' : '') +
       '<td class="weg">' + datum(r.datum) + '</td><td class="r">' + eur(r.brutto) + '</td><td>' + standHtml(r) + '</td></tr>';
   }
@@ -294,6 +309,7 @@
     if (!k) return nichtGefunden();
     var auftr = neu ? [] : S.auftraege.filter(function (a) { return a.kunde_id === k.id; });
     var bel = neu ? [] : S.rechnungen.filter(function (r) { return r.kunde_id === k.id; }).sort(function (a, b) { return String(b.datum).localeCompare(String(a.datum)); });
+    var preise = neu ? [] : S.kundenpreise.filter(function (p) { return p.kunde_id === k.id; });
     seite(neu ? 'Neuer Kunde' : kundeName(k), neu ? '' : esc(k.nummer), neu ? '' :
       '<a class="knopf klein" href="#auftrag/neu?kunde=' + k.id + '">Neuer Auftrag</a><a class="knopf zweit klein" href="#beleg/neu-rechnung?kunde=' + k.id + '">Neue Rechnung</a>',
       '<a class="zurueck-link" href="#kunden">← Kunden</a>' +
@@ -310,8 +326,19 @@
       (neu ? '' : '<div class="zwei"><section class="block"><h2>Aufträge</h2>' + tabelle([['Auftrag'], ['Stand']], auftr.map(function (a) {
         return '<tr data-href="auftrag/' + a.id + '"><td><a href="#auftrag/' + a.id + '">' + esc(a.titel || a.nummer) + '</a><span class="neben">' + esc(a.nummer) + '</span></td><td>' + auftragStand(a) + '</td></tr>';
       }), 'Noch keine Aufträge.', true) + '</section><section class="block"><h2>Rechnungen und Angebote</h2>' +
-        tabelle([['Nummer'], ['Datum', 'weg'], ['Betrag', 'r'], ['Stand']], bel.map(function (r) { return belegZeile(r, false); }), 'Noch keine Belege.', true) + '</section></div>'));
+        tabelle([['Nummer'], ['Datum', 'weg'], ['Betrag', 'r'], ['Stand']], bel.map(function (r) { return belegZeile(r, false); }), 'Noch keine Belege.', true) + '</section></div>' +
+        '<section class="block"><h2>Eigene Preise <button class="link-knopf" type="button" id="preis-neu">Preis festlegen</button></h2>' +
+        (preise.length ? '<p class="block-zeile">Diese Preise gelten statt des Listenpreises, wenn du für ' + esc(kundeName(k)) + ' eine Leistung einfügst.</p>' : '') +
+        tabelle([['Leistung'], ['Listenpreis', 'r weg'], ['Kundenpreis', 'r']], preise.map(function (p) {
+          var l = per(S.leistungen, p.leistung_id);
+          return '<tr data-preis="' + p.id + '" style="cursor:pointer"><td>' + esc(l ? l.name : 'Leistung gelöscht') + (p.bemerkung ? '<span class="neben">' + esc(p.bemerkung) + '</span>' : '') + '</td>' +
+            '<td class="r weg">' + (l ? eur(l.preis) : '') + '</td><td class="r"><b>' + eur(p.preis) + '</b></td></tr>';
+        }), 'Keine eigenen Preise. Es gelten die Listenpreise aus „Leistungen“.') + '</section>'));
     zeilenKlick();
+    if (!neu) {
+      document.getElementById('preis-neu').addEventListener('click', function () { kundenpreisBearbeiten(k, null); });
+      inhalt.querySelectorAll('[data-preis]').forEach(function (tr) { tr.addEventListener('click', function () { kundenpreisBearbeiten(k, per(S.kundenpreise, tr.dataset.preis)); }); });
+    }
     var form = document.getElementById('form');
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -327,10 +354,32 @@
       if (auftr.length) { hinweis('Bitte zuerst die Aufträge dieses Kunden löschen.', true); return; }
       frage('Kunde löschen?', kundeName(k) + ' wird entfernt.', 'Löschen', true).then(function (ok) {
         if (!ok) return;
-        Promise.all(bel.map(function (r) { return loeschen('rechnungen', r.id); })).then(function () { return loeschen('kunden', k.id); })
+        Promise.all(bel.map(function (r) { return loeschen('rechnungen', r.id); }).concat(preise.map(function (p) { return loeschen('kundenpreise', p.id); })))
+          .then(function () { return Promise.all(S.ausgaben.filter(function (x) { return x.kunde_id === k.id; }).map(function (x) { return speichern('ausgaben', { id: x.id, kunde_id: null }); })); })
+          .then(function () { return loeschen('kunden', k.id); })
           .then(function () { hinweis('Gelöscht'); location.hash = 'kunden'; }).catch(fehler);
       });
     });
+  }
+
+  function kundenpreisBearbeiten(k, p) {
+    var neu = !p; p = p || { preis: '' };
+    var vergeben = S.kundenpreise.filter(function (x) { return x.kunde_id === k.id && x !== p; }).map(function (x) { return x.leistung_id; });
+    var wahl = S.leistungen.filter(function (l) { return (l.aktiv !== false && vergeben.indexOf(l.id) < 0) || l.id === p.leistung_id; })
+      .sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); }).map(function (l) { return [l.id, l.name + ' (' + eur(l.preis) + ')']; });
+    if (!wahl.length) { hinweis('Für alle Leistungen gibt es schon einen eigenen Preis.', true); return; }
+    dialog({ titel: neu ? 'Eigenen Preis festlegen' : 'Eigenen Preis ändern', unter: kundeName(k),
+      html: '<div class="felder">' + feld('leistung_id', 'Leistung', p.leistung_id || wahl[0][0], { art: 'select', optionen: wahl, breite: 'ganz' }) +
+        feld('preis', 'Preis für diesen Kunden in Euro', p.preis === '' ? '' : komma(p.preis), { modus: 'decimal', pflicht: true }) +
+        feld('bemerkung', 'Bemerkung', p.bemerkung, { hilfe: 'z. B. Rahmenvertrag 2027' }) + '</div>',
+      knoepfe: (neu ? [] : [{ t: 'Löschen', w: 'weg', art: 'gefahr' }]).concat([{ t: 'Abbrechen', w: '', art: 'zweit' }, { t: 'Speichern', w: 'ok' }]) })
+      .then(function (d) {
+        if (d.wahl === 'weg') return loeschen('kundenpreise', p.id).then(function () { hinweis('Gelöscht'); route(); });
+        if (d.wahl !== 'ok') return;
+        if (String(d.werte.preis).trim() === '') throw new Error('Bitte einen Preis eintragen.');
+        return speichern('kundenpreise', Object.assign({}, p, { kunde_id: k.id, leistung_id: Number(d.werte.leistung_id), preis: zahl(d.werte.preis), bemerkung: d.werte.bemerkung }))
+          .then(function () { hinweis('Gespeichert'); route(); });
+      }).catch(fehler);
   }
 
   /* ---------- Aufträge ---------- */
@@ -371,23 +420,39 @@
     var posten = JSON.parse(JSON.stringify(a.posten || []));
     var belege = neu ? [] : S.rechnungen.filter(function (r) { return r.auftrag_id === a.id; });
     var offenePosten = function () { return posten.filter(function (p) { return !p.rechnung_id; }); };
+    var zeiten = neu ? [] : zeitenVon(a);
+    var auslagen = neu ? [] : auslagenVon(a);
+    var std = zeiten.reduce(function (s, z) { return s + zahl(z.stunden); }, 0);
+    var stdOffen = zeiten.reduce(function (s, z) { return z.rechnung_id ? s : s + zahl(z.stunden); }, 0);
     seite(neu ? 'Neuer Auftrag' : (a.titel || 'Auftrag'), neu ? '' : esc(a.nummer) + ' · ' + esc(kundeName(kundeVon(a))), '',
       '<a class="zurueck-link" href="#auftraege">← Aufträge</a>' +
       '<form class="block" id="form"><h2>Auftrag</h2><div class="innen"><div class="felder">' +
       feld('titel', 'Titel', a.titel, { breite: 'ganz', pflicht: true }) +
       feld('kunde_id', 'Kunde', a.kunde_id, { art: 'select', optionen: kundenOptionen('Bitte wählen') }) +
       feld('status', 'Stand', a.status, { art: 'select', optionen: Object.keys(AUFTRAG_STAND).map(function (s) { return [s, AUFTRAG_STAND[s]]; }) }) +
-      feld('start', 'Beginn', a.start, { art: 'date' }) + feld('ende', 'Ende oder Termin', a.ende, { art: 'date' }) +
+      feld('start', 'Beginn', a.start, { art: 'date', breite: 'zwei-d' }) + feld('ende', 'Ende oder Termin', a.ende, { art: 'date', breite: 'zwei-d' }) +
+      feld('stundensatz', 'Stundensatz in Euro', a.stundensatz ? komma(a.stundensatz) : '', { breite: 'zwei-d', modus: 'decimal', hilfe: 'Für gebuchte Zeiten. Leer lassen, wenn nur Positionen zählen.' }) +
       feld('beschreibung', 'Beschreibung', a.beschreibung, { art: 'textarea', breite: 'ganz' }) +
       '</div></div></form>' +
       '<section class="block"><h2>Positionen</h2><div class="innen" id="posten"></div></section>' +
       '<div class="formfuss" style="margin:-4px 0 28px"><button class="knopf klein" type="button" id="sichern">Speichern</button>' +
       (neu ? '' : '<button class="knopf zweit klein" type="button" id="angebot">Angebot erstellen</button><button class="knopf zweit klein" type="button" id="rechnung">Rechnung erstellen</button><button class="knopf gefahr klein" type="button" id="weg">Auftrag löschen</button>') + '</div>' +
-      (neu ? '' : '<section class="block"><h2>Belege zu diesem Auftrag</h2>' + tabelle([['Nummer'], ['Datum', 'weg'], ['Betrag', 'r'], ['Stand']], belege.map(function (r) { return belegZeile(r, false); }), 'Noch keine Angebote oder Rechnungen.', true) + '</section>'));
+      (neu ? '' : '<div class="zwei"><section class="block"><h2>Zeiten <button class="link-knopf" type="button" id="zeit-neu">Zeit buchen</button></h2>' +
+        (zeiten.length ? '<p class="block-zeile">' + komma(std) + ' Std. gebucht' + (stdOffen !== std ? ', davon ' + komma(stdOffen) + ' noch nicht abgerechnet' : '') +
+          (zahl(a.stundensatz) ? ' · ' + eur(stdOffen * zahl(a.stundensatz)) + ' offen' : stdOffen ? ' · Ohne Stundensatz kommen sie nicht auf die Rechnung.' : '') + '</p>' : '') +
+        tabelle([['Datum'], ['Was'], ['Std.', 'r']], zeiten.map(function (z) {
+          return '<tr data-zeit="' + z.id + '" style="cursor:pointer"><td>' + datum(z.datum) + '</td><td>' + esc(z.beschreibung || 'Arbeitszeit') + (z.rechnung_id ? '<span class="neben">abgerechnet</span>' : '') + '</td><td class="r">' + komma(z.stunden) + '</td></tr>';
+        }), 'Noch keine Zeiten gebucht.') + '</section>' +
+        '<section class="block"><h2>Auslagen <button class="link-knopf" type="button" id="auslage-neu">Auslage erfassen</button></h2>' +
+        tabelle([['Datum'], ['Was'], ['Betrag', 'r']], auslagen.map(function (x) {
+          return '<tr data-auslage="' + x.id + '" style="cursor:pointer"><td>' + datum(x.datum) + '</td><td>' + esc(x.beschreibung || x.kategorie) +
+            '<span class="neben">' + (x.weiterberechnen ? (x.rechnung_id ? 'weiterberechnet' : 'wird weiterberechnet') : 'nur Ausgabe') + (x.datei ? ' · mit Beleg' : '') + '</span></td><td class="r">' + eur(x.betrag) + '</td></tr>';
+        }), 'Keine Auslagen.') + '</section></div>' +
+        '<section class="block"><h2>Belege zu diesem Auftrag</h2>' + tabelle([['Nummer'], ['Datum', 'weg'], ['Betrag', 'r'], ['Stand']], belege.map(function (r) { return belegZeile(r, false); }), 'Noch keine Angebote oder Rechnungen.', true) + '</section>'));
     zeilenKlick();
     var box = document.getElementById('posten');
     function zeichnen() { box.innerHTML = postenEditor(posten, false); }
-    var lesen = postenBinden(box, posten, zeichnen);
+    var lesen = postenBinden(box, posten, zeichnen, function () { return document.getElementById('f-kunde_id').value; });
     zeichnen();
     var form = document.getElementById('form');
     function sichern() {
@@ -395,7 +460,7 @@
       var w = werteAus(form);
       if (!w.titel.trim()) return Promise.reject(new Error('Bitte einen Titel eintragen.'));
       if (!w.kunde_id) return Promise.reject(new Error('Bitte einen Kunden wählen.'));
-      var obj = Object.assign({}, a, w, { kunde_id: Number(w.kunde_id), posten: posten });
+      var obj = Object.assign({}, a, w, { kunde_id: Number(w.kunde_id), posten: posten, stundensatz: zahl(w.stundensatz) });
       if (neu) obj.nummer = auftragsNummer();
       return speichern('auftraege', obj).then(function (g) { a = g; return g; });
     }
@@ -404,6 +469,10 @@
       sichern().then(function (g) { hinweis('Gespeichert'); if (neu) location.hash = 'auftrag/' + g.id; }).catch(fehler);
     });
     if (neu) return;
+    document.getElementById('zeit-neu').addEventListener('click', function () { zeitBearbeiten(a, null); });
+    inhalt.querySelectorAll('[data-zeit]').forEach(function (tr) { tr.addEventListener('click', function () { zeitBearbeiten(a, per(S.zeiten, tr.dataset.zeit)); }); });
+    document.getElementById('auslage-neu').addEventListener('click', function () { bewegungBearbeiten('ausgaben', null, { auftrag_id: a.id, weiterberechnen: true }); });
+    inhalt.querySelectorAll('[data-auslage]').forEach(function (tr) { tr.addEventListener('click', function () { bewegungBearbeiten('ausgaben', per(S.ausgaben, tr.dataset.auslage)); }); });
     document.getElementById('angebot').addEventListener('click', function () {
       sichern().then(function (g) {
         if (!g.posten.length) throw new Error('Für ein Angebot braucht der Auftrag Positionen.');
@@ -414,23 +483,58 @@
     document.getElementById('rechnung').addEventListener('click', function () {
       sichern().then(function (g) {
         var offen = offenePosten();
-        if (!offen.length) throw new Error('Alle Positionen sind schon abgerechnet oder es gibt keine.');
-        return neuerBeleg('rechnung', g.kunde_id, g.id, offen.map(function (p) { return { bezeichnung: p.bezeichnung, menge: p.menge, einheit: p.einheit, einzelpreis: p.einzelpreis, ap: p.id }; }), g.titel)
+        var p = offen.map(function (x) { return { bezeichnung: x.bezeichnung, menge: x.menge, einheit: x.einheit, einzelpreis: x.einzelpreis, ap: x.id }; });
+        // Nicht abgerechnete Stunden mit dem Stundensatz des Auftrags, wie am Mac
+        var zOffen = zahl(g.stundensatz) > 0 ? zeitenVon(g).filter(function (z) { return !z.rechnung_id; }) : [];
+        var stunden = rund(zOffen.reduce(function (s, z) { return s + zahl(z.stunden); }, 0));
+        if (stunden) p.push({ bezeichnung: 'Arbeitszeit ' + (g.titel || g.nummer), menge: stunden, einheit: 'Stunde', einzelpreis: zahl(g.stundensatz) });
+        var aOffen = auslagenVon(g).filter(function (x) { return x.weiterberechnen && !x.rechnung_id; });
+        aOffen.forEach(function (x) { p.push({ bezeichnung: 'Auslage: ' + (x.beschreibung || x.kategorie), menge: 1, einheit: 'Pauschale', einzelpreis: zahl(x.betrag) }); });
+        if (!p.length) throw new Error(posten.length ? 'Aus diesem Auftrag ist schon alles abgerechnet. Trag neue Positionen ein oder buche Zeiten.' : 'Der Auftrag hat noch keine Positionen, Zeiten oder Auslagen.');
+        return neuerBeleg('rechnung', g.kunde_id, g.id, p, g.titel)
           .then(function (r) {
             // Was auf einer Rechnung steht, gilt als abgerechnet und wird nicht noch einmal berechnet
-            offen.forEach(function (p) { p.rechnung_id = r.id; });
+            offen.forEach(function (x) { x.rechnung_id = r.id; });
             a.posten = posten;
-            if (posten.every(function (p) { return p.rechnung_id; })) a.status = 'abgerechnet';
-            return speichern('auftraege', a).then(function () { return r; });
+            if (posten.every(function (x) { return x.rechnung_id; })) a.status = 'abgerechnet';
+            return Promise.all(zOffen.map(function (z) { return speichern('zeiten', { id: z.id, rechnung_id: r.id }); })
+              .concat(aOffen.map(function (x) { return speichern('ausgaben', { id: x.id, rechnung_id: r.id }); })))
+              .then(function () { return speichern('auftraege', a); }).then(function () { return r; });
           });
       }).then(function (r) { location.hash = 'beleg/' + r.id; }).catch(fehler);
     });
     document.getElementById('weg').addEventListener('click', function () {
       if (belege.length) { hinweis('Zu diesem Auftrag gibt es Belege. Er bleibt stehen; setz ihn stattdessen auf „Abgelehnt“ oder „Abgerechnet“.', true); return; }
       frage('Auftrag löschen?', (a.titel || a.nummer) + ' wird entfernt.', 'Löschen', true).then(function (ok) {
-        if (ok) loeschen('auftraege', a.id).then(function () { hinweis('Gelöscht'); location.hash = 'auftraege'; }).catch(fehler);
+        if (!ok) return;
+        Promise.all(zeiten.map(function (z) { return loeschen('zeiten', z.id); }).concat(auslagen.map(function (x) { return speichern('ausgaben', { id: x.id, auftrag_id: null, weiterberechnen: false }); })))
+          .then(function () { return loeschen('auftraege', a.id); }).then(function () { hinweis('Gelöscht'); location.hash = 'auftraege'; }).catch(fehler);
       });
     });
+  }
+
+  /* ---------- Zeiterfassung ---------- */
+  function zeitenVon(a) { return S.zeiten.filter(function (z) { return z.auftrag_id === a.id; }).sort(function (x, y) { return String(y.datum).localeCompare(String(x.datum)) || y.id - x.id; }); }
+  function auslagenVon(a) { return S.ausgaben.filter(function (x) { return x.auftrag_id === a.id; }).sort(function (x, y) { return String(y.datum).localeCompare(String(x.datum)); }); }
+  function zeitBearbeiten(a, z) {
+    var neu = !z; z = z || { datum: heute(), stunden: '' };
+    if (z.rechnung_id) {
+      var rg = per(S.rechnungen, z.rechnung_id);
+      hinweis('Diese Zeit steht schon auf ' + (rg && rg.nummer ? 'Rechnung ' + rg.nummer : 'einem Rechnungsentwurf') + ' und bleibt deshalb, wie sie ist.', true);
+      return;
+    }
+    dialog({ titel: neu ? 'Zeit buchen' : 'Zeit ändern', unter: a.titel || a.nummer,
+      html: '<div class="felder">' + feld('datum', 'Datum', z.datum, { art: 'date' }) +
+        feld('stunden', 'Stunden', z.stunden === '' ? '' : komma(z.stunden), { modus: 'decimal', pflicht: true, hilfe: 'z. B. 1,5 für anderthalb Stunden' }) +
+        feld('beschreibung', 'Was wurde gemacht?', z.beschreibung, { breite: 'ganz' }) + '</div>',
+      knoepfe: (neu ? [] : [{ t: 'Löschen', w: 'weg', art: 'gefahr' }]).concat([{ t: 'Abbrechen', w: '', art: 'zweit' }, { t: 'Speichern', w: 'ok' }]) })
+      .then(function (d) {
+        if (d.wahl === 'weg') return loeschen('zeiten', z.id).then(function () { hinweis('Gelöscht'); route(); });
+        if (d.wahl !== 'ok') return;
+        var std = zahl(d.werte.stunden);
+        if (std <= 0) throw new Error('Bitte die Stunden eintragen.');
+        return speichern('zeiten', Object.assign({}, z, d.werte, { auftrag_id: a.id, stunden: rund(std) })).then(function () { hinweis('Gebucht'); route(); });
+      }).catch(fehler);
   }
 
   /* ---------- Rechnungen und Angebote ---------- */
@@ -491,6 +595,9 @@
     var storno = r.storniert_durch ? per(S.rechnungen, r.storniert_durch) : null, orig = r.storno_von ? per(S.rechnungen, r.storno_von) : null;
     var akt = '<button class="knopf klein" type="button" id="drucken">Drucken oder als PDF</button>';
     if (!istA && r.typ === 'rechnung' && r.status === 'offen') akt += '<button class="knopf zweit klein" type="button" id="bezahlt">Als bezahlt markieren</button>';
+    var stufe = Number(r.mahnstufe) || 0;
+    if (!istA && r.typ === 'rechnung' && r.status === 'offen' && stufe < 3) akt += '<button class="knopf zweit klein" type="button" id="mahnen">' + MAHNTITEL[stufe + 1] + ' erstellen</button>';
+    if (!istA && r.typ === 'rechnung' && stufe > 0) akt += '<button class="knopf zweit klein" type="button" id="mahnung-druck">' + MAHNTITEL[stufe] + ' drucken</button>';
     if (!istA && r.typ === 'rechnung' && r.status === 'bezahlt') akt += '<button class="knopf zweit klein" type="button" id="unbezahlt">Zahlung zurücknehmen</button>';
     if (!istA && r.typ === 'rechnung' && r.status !== 'storniert') akt += '<button class="knopf gefahr klein" type="button" id="storno">Stornieren</button>';
     if (istA && r.status === 'offen') akt += '<button class="knopf zweit klein" type="button" id="an">Angenommen</button><button class="knopf zweit klein" type="button" id="ab">Abgelehnt</button>';
@@ -502,6 +609,7 @@
         'Festgeschrieben am ' + datum(r.festgeschrieben_am) + '. Änderungen sind nur noch über ein Storno mit eigener Nummer möglich.') +
       (r.bezahlt_am ? ' ' + (zahl(r.bezahlt_betrag) < 0 ? 'Erstattet' : 'Bezahlt') + ' am ' + datum(r.bezahlt_am) + ': ' + eur(r.bezahlt_betrag) + '.' : '') +
       (r.status === 'offen' && r.faellig_am && !istA ? ' Fällig am ' + datum(r.faellig_am) + '.' : '') +
+      (stufe ? ' ' + MAHNTITEL[stufe] + ' verschickt am ' + datum(r.mahnung_am) + '.' : '') +
       (storno ? ' Storniert durch <a href="#beleg/' + storno.id + '">' + esc(storno.nummer) + '</a>.' : '') +
       (orig ? ' Storno zu <a href="#beleg/' + orig.id + '">' + esc(orig.nummer) + '</a>.' : '') +
       (r.auftrag_id ? ' Auftrag: <a href="#auftrag/' + r.auftrag_id + '">' + esc((per(S.auftraege, r.auftrag_id) || {}).nummer || 'öffnen') + '</a>.' : '') +
@@ -524,6 +632,20 @@
       });
     });
     if ($('storno')) $('storno').addEventListener('click', function () { stornieren(r); });
+    if ($('mahnung-druck')) $('mahnung-druck').addEventListener('click', function () { drucken(r, true); });
+    if ($('mahnen')) $('mahnen').addEventListener('click', function () {
+      var neu = stufe + 1, frueh = r.faellig_am && r.faellig_am >= heute();
+      dialog({ titel: MAHNTITEL[neu] + ' zu ' + r.nummer + '?', html: '<p style="margin:0 0 10px">Die Rechnung bekommt den Vermerk „' + MAHNTITEL[neu] + '“ mit heutigem Datum. Danach öffnet sich das Schreiben zum Drucken oder als PDF.</p>' +
+          (neu >= 2 ? '<p style="margin:0 0 10px">Ab dieser Stufe kommen Verzugszinsen von ' + komma(S.e.verzugszins) + ' % im Jahr dazu.</p>' : '') +
+          (frueh ? '<div class="info warn" style="margin:0">Die Rechnung ist erst am ' + datum(r.faellig_am) + ' fällig.</div>' : ''),
+        knoepfe: [{ t: 'Abbrechen', w: '', art: 'zweit' }, { t: 'Erstellen', w: 'ok' }] })
+        .then(function (d) {
+          if (d.wahl !== 'ok') return;
+          return speichern('rechnungen', { id: r.id, mahnstufe: neu, mahnung_am: heute() }).then(function (g) {
+            hinweis(MAHNTITEL[neu] + ' eingetragen'); route(); drucken(g, true);
+          });
+        }).catch(fehler);
+    });
     if ($('an')) $('an').addEventListener('click', function () { speichern('rechnungen', { id: r.id, status: 'angenommen' }).then(function () { hinweis('Angebot angenommen'); route(); }).catch(fehler); });
     if ($('ab')) $('ab').addEventListener('click', function () { speichern('rechnungen', { id: r.id, status: 'abgelehnt' }).then(function () { hinweis('Angebot abgelehnt'); route(); }).catch(fehler); });
     if ($('zurechnung')) $('zurechnung').addEventListener('click', function () {
@@ -552,7 +674,7 @@
       '<button class="knopf gefahr klein" type="button" id="weg">Entwurf löschen</button></div>');
     var box = document.getElementById('posten');
     function zeichnen() { box.innerHTML = postenEditor(posten, false); }
-    var lesen = postenBinden(box, posten, zeichnen);
+    var lesen = postenBinden(box, posten, zeichnen, function () { return document.getElementById('f-kunde_id').value; });
     zeichnen();
     var form = document.getElementById('form');
     form.addEventListener('submit', function (e) { e.preventDefault(); });
@@ -598,12 +720,15 @@
   }
   /* Positionen im Auftrag wieder auf „offen“ setzen, wenn ihre Rechnung wegfällt (Entwurf gelöscht oder storniert). */
   function auftragFreigeben(r) {
+    if (r.typ === 'angebot') return Promise.resolve();
+    var schritte = S.zeiten.filter(function (z) { return z.rechnung_id === r.id; }).map(function (z) { return speichern('zeiten', { id: z.id, rechnung_id: null }); })
+      .concat(S.ausgaben.filter(function (x) { return x.rechnung_id === r.id; }).map(function (x) { return speichern('ausgaben', { id: x.id, rechnung_id: null }); }));
     var a = r.auftrag_id ? per(S.auftraege, r.auftrag_id) : null;
-    if (!a || r.typ === 'angebot') return Promise.resolve();
     var geaendert = false;
-    (a.posten || []).forEach(function (p) { if (p.rechnung_id === r.id) { p.rechnung_id = null; geaendert = true; } });
+    if (a) (a.posten || []).forEach(function (p) { if (p.rechnung_id === r.id) { p.rechnung_id = null; geaendert = true; } });
     if (geaendert && a.status === 'abgerechnet') a.status = 'fertig';
-    return geaendert ? speichern('auftraege', a) : Promise.resolve();
+    if (geaendert) schritte.push(speichern('auftraege', a));
+    return Promise.all(schritte);
   }
   function stornieren(r) {
     var bezahlt = r.status === 'bezahlt';
@@ -656,7 +781,6 @@
     var titel = istA ? 'Angebot' : r.typ === 'storno' ? 'Stornorechnung' : 'Rechnung';
     var zweck = (titel + ' ' + (r.nummer || '')).trim();
     var s = { netto: zahl(r.netto), steuer: zahl(r.steuer), brutto: zahl(r.brutto) };
-    var streifen = ['--petrol', '--petrol-hell', '--pink', '--orange', '--gelb', '--gruen', '--himmel', '--petrol'].map(function (f) { return '<i style="background:var(' + f + ')"></i>'; }).join('');
     var zeilen = (r.posten || []).map(function (p, i) {
       var teile = String(p.bezeichnung || '').split('\n');
       return '<tr><td>' + (i + 1) + '</td><td><b style="font-weight:600">' + esc(teile[0]) + '</b>' + (teile.length > 1 ? '<br><span style="color:#6b737a">' + esc(teile.slice(1).join(' ')) + '</span>' : '') + '</td>' +
@@ -672,20 +796,52 @@
         'Kontoinhaber: ' + esc(a.bank_inhaber || a.inhaber) + '<br>IBAN: ' + esc(a.iban || 'in den Einstellungen eintragen') + (a.bic ? ' · BIC: ' + esc(a.bic) : '') + (a.bank_name ? '<br>' + esc(a.bank_name) : '') +
         '<br>Verwendungszweck: ' + esc(zweck || 'Rechnungsnummer folgt') + (qr ? '<br><span style="color:#6b737a">Mit der Banking-App scannen: alle Angaben sind schon ausgefüllt.</span>' : '') + '</div></div>';
     }
-    return '<div class="blatt"><div class="b-streifen">' + streifen + '</div>' +
-      '<div class="b-kopf"><img src="assets/img/logo-voll.png" alt="ARTLENN MEDIA"><div class="b-absender">' +
-      esc(a.name) + '<br>' + esc(a.inhaber) + '<br>' + esc(a.strasse) + '<br>' + esc(a.plz + ' ' + a.ort) + (a.email ? '<br>' + esc(a.email) : '') + (a.telefon ? '<br>' + esc(a.telefon) : '') + '</div></div>' +
-      '<div class="b-zeile">' + esc([a.name, a.strasse, a.plz + ' ' + a.ort].join(' · ')) + '</div>' +
-      '<div class="b-empf">' + esc(emp).replace(/\n/g, '<br>') + '</div>' +
-      '<div class="b-meta"><h1>' + titel + (r.nummer ? ' ' + esc(r.nummer) : ' (Entwurf)') + '</h1><div class="b-daten">' +
+    return blattKopf(a, emp) + '<div class="b-meta"><h1>' + titel + (r.nummer ? ' ' + esc(r.nummer) : ' (Entwurf)') + '</h1><div class="b-daten">' +
       'Datum: ' + datum(r.datum) + (r.leistungsdatum ? '<br>Leistung: ' + esc(/^\d{4}-\d{2}-\d{2}$/.test(r.leistungsdatum) ? datum(r.leistungsdatum) : r.leistungsdatum) : '') +
       (kundeVon(r) && kundeVon(r).nummer ? '<br>Kundennummer: ' + esc(kundeVon(r).nummer) : '') + '</div></div>' +
       (r.kopftext ? '<div class="b-text">' + esc(r.kopftext) + '</div>' : '') +
       '<table><thead><tr><th style="width:8mm">Pos.</th><th>Bezeichnung</th><th class="r">Menge</th><th class="r">Einzelpreis</th><th class="r">Betrag</th></tr></thead><tbody>' + zeilen + summe + '</tbody></table>' +
       (klein ? '<div class="b-text" style="color:#4d565e">' + esc(a.hinweis_19 || 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.') + '</div>' : '') +
-      zahlung + (r.fusstext ? '<div class="b-text">' + esc(r.fusstext) + '</div>' : '') +
-      '<div class="b-fuss"><div>' + esc(a.name) + '<br>Inhaber: ' + esc(a.inhaber) + '</div><div>' + (a.steuernummer ? 'Steuernummer: ' + esc(a.steuernummer) : '') + (a.ust_id ? '<br>USt-IdNr.: ' + esc(a.ust_id) : '') + '</div>' +
+      zahlung + (r.fusstext ? '<div class="b-text">' + esc(r.fusstext) + '</div>' : '') + blattFuss(a);
+  }
+  function blattKopf(a, emp) {
+    var streifen = ['--petrol', '--petrol-hell', '--pink', '--orange', '--gelb', '--gruen', '--himmel', '--petrol'].map(function (f) { return '<i style="background:var(' + f + ')"></i>'; }).join('');
+    return '<div class="blatt"><div class="b-streifen">' + streifen + '</div>' +
+      '<div class="b-kopf"><img src="assets/img/logo-voll.png" alt="ARTLENN MEDIA"><div class="b-absender">' +
+      esc(a.name) + '<br>' + esc(a.inhaber) + '<br>' + esc(a.strasse) + '<br>' + esc(a.plz + ' ' + a.ort) + (a.email ? '<br>' + esc(a.email) : '') + (a.telefon ? '<br>' + esc(a.telefon) : '') + '</div></div>' +
+      '<div class="b-zeile">' + esc([a.name, a.strasse, a.plz + ' ' + a.ort].join(' · ')) + '</div>' +
+      '<div class="b-empf">' + esc(emp).replace(/\n/g, '<br>') + '</div>';
+  }
+  function blattFuss(a) {
+    return '<div class="b-fuss"><div>' + esc(a.name) + '<br>Inhaber: ' + esc(a.inhaber) + '</div><div>' + (a.steuernummer ? 'Steuernummer: ' + esc(a.steuernummer) : '') + (a.ust_id ? '<br>USt-IdNr.: ' + esc(a.ust_id) : '') + '</div>' +
       '<div>' + (a.iban ? 'IBAN: ' + esc(a.iban) : '') + (a.bank_name ? '<br>' + esc(a.bank_name) : '') + '</div></div></div>';
+  }
+
+  /* Mahnung wie am Mac: Stufe 1 Zahlungserinnerung ohne Zinsen, ab Stufe 2 Verzugszinsen
+     ab dem Tag nach Fälligkeit, Frist 7 bzw. 5 Tage. Die Rechnung selbst bleibt unverändert. */
+  function verzugszinsen(betrag, faellig, am, satz) {
+    var tage = faellig ? tageZwischen(faellig, am) : 0;
+    return tage > 0 && satz ? rund(betrag * satz / 100 * tage / 365) : 0;
+  }
+  function mahnBlatt(r) {
+    var stufe = Math.max(1, Math.min(3, Number(r.mahnstufe) || 1)), am = r.mahnung_am || heute();
+    var a = absenderJetzt(), titel = MAHNTITEL[stufe], brutto = zahl(r.brutto);
+    var tageOffen = r.faellig_am ? Math.max(0, tageZwischen(r.faellig_am, am)) : 0;
+    var zinsen = stufe >= 2 ? verzugszinsen(brutto, r.faellig_am, am, zahl(S.e.verzugszins)) : 0;
+    var gesamt = rund(brutto + zinsen), frist = plusTage(am, stufe === 1 ? 7 : 5), zweck = 'Rechnung ' + r.nummer;
+    var kd = kundeVon(r), qr = girocode(a, gesamt, zweck);
+    return blattKopf(a, r.empfaenger || anschrift(kd)) +
+      '<div class="b-meta"><h1>' + titel + '</h1><div class="b-daten">Datum: ' + datum(am) + '<br>Rechnung: ' + esc(r.nummer) +
+      (kd && kd.nummer ? '<br>Kundennummer: ' + esc(kd.nummer) : '') + '</div></div>' +
+      '<div class="b-text">' + esc(S.e['mahntext_' + stufe] || '') + '</div>' +
+      '<table><thead><tr><th style="width:8mm">Pos.</th><th>Bezeichnung</th><th class="r">Betrag</th></tr></thead><tbody>' +
+      '<tr><td>1</td><td><b style="font-weight:600">Rechnung ' + esc(r.nummer) + ' vom ' + datum(r.datum) + '</b><br><span style="color:#6b737a">fällig am ' + datum(r.faellig_am) + ' · seit ' + tageOffen + ' Tagen offen</span></td><td class="r">' + eur(brutto) + '</td></tr>' +
+      (zinsen ? '<tr><td>2</td><td><b style="font-weight:600">Verzugszinsen</b><br><span style="color:#6b737a">' + komma(S.e.verzugszins) + ' % im Jahr für ' + tageOffen + ' Tage</span></td><td class="r">' + eur(zinsen) + '</td></tr>' : '') +
+      '<tr class="b-summe"><td colspan="2" class="r">Offener Betrag</td><td class="r">' + eur(gesamt) + '</td></tr></tbody></table>' +
+      '<div class="b-zahlung">' + qr + '<div><b>Bitte überweisen Sie ' + eur(gesamt) + ' bis zum ' + datum(frist) + '.</b><br>' +
+      'Kontoinhaber: ' + esc(a.bank_inhaber || a.inhaber) + '<br>IBAN: ' + esc(a.iban || 'in den Einstellungen eintragen') + (a.bic ? ' · BIC: ' + esc(a.bic) : '') + (a.bank_name ? '<br>' + esc(a.bank_name) : '') +
+      '<br>Verwendungszweck: ' + esc(zweck) + (qr ? '<br><span style="color:#6b737a">Mit der Banking-App scannen: alle Angaben sind schon ausgefüllt.</span>' : '') + '</div></div>' +
+      '<div class="b-text">Sollten Sie die Zahlung inzwischen veranlasst haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.</div>' + blattFuss(a);
   }
   function vorschauEinpassen() {
     document.querySelectorAll('.vorschau').forEach(function (v) {
@@ -696,11 +852,11 @@
     });
   }
   window.addEventListener('resize', vorschauEinpassen);
-  function drucken(r) {
+  function drucken(r, mahnung) {
     var d = document.getElementById('druck');
-    d.innerHTML = blatt(r);
+    d.innerHTML = mahnung ? mahnBlatt(r) : blatt(r);
     var alt = document.title;
-    document.title = ((r.typ === 'angebot' ? 'Angebot ' : r.typ === 'storno' ? 'Storno ' : 'Rechnung ') + r.nummer + ' ' + kundeName(kundeVon(r))).trim();
+    document.title = ((mahnung ? MAHNTITEL[r.mahnstufe] + ' zu ' : r.typ === 'angebot' ? 'Angebot ' : r.typ === 'storno' ? 'Storno ' : 'Rechnung ') + r.nummer + ' ' + kundeName(kundeVon(r))).trim();
     var img = d.querySelector('img');
     var los = function () { window.print(); document.title = alt; };
     if (img && !img.complete) img.onload = los; else los();
@@ -722,8 +878,8 @@
     });
     var bewegungen = [];
     S.rechnungen.forEach(function (r) { if (r.bezahlt_am && jahr(r.bezahlt_am) === j) bewegungen.push({ d: r.bezahlt_am, t: (r.typ === 'storno' ? 'Erstattung ' : 'Rechnung ') + r.nummer + ' · ' + kundeName(kundeVon(r)), b: zahl(r.bezahlt_betrag), h: 'beleg/' + r.id }); });
-    S.einnahmen.forEach(function (x) { if (jahr(x.datum) === j) bewegungen.push({ d: x.datum, t: x.beschreibung || 'Einnahme', b: zahl(x.betrag), tab: 'einnahmen', id: x.id }); });
-    S.ausgaben.forEach(function (x) { if (jahr(x.datum) === j) bewegungen.push({ d: x.datum, t: (x.beschreibung || 'Ausgabe') + ' · ' + x.kategorie, b: -zahl(x.betrag), tab: 'ausgaben', id: x.id }); });
+    S.einnahmen.forEach(function (x) { if (jahr(x.datum) === j) bewegungen.push({ d: x.datum, t: x.beschreibung || 'Einnahme', b: zahl(x.betrag), tab: 'einnahmen', id: x.id, datei: x.datei }); });
+    S.ausgaben.forEach(function (x) { if (jahr(x.datum) === j) bewegungen.push({ d: x.datum, t: (x.beschreibung || 'Ausgabe') + ' · ' + x.kategorie, b: -zahl(x.betrag), tab: 'ausgaben', id: x.id, datei: x.datei }); });
     bewegungen.sort(function (a, b) { return b.d.localeCompare(a.d); });
     seite('Finanzen', 'Gezählt wird der Tag, an dem das Geld fließt.',
       '<select class="ein" id="jahr" aria-label="Jahr" style="min-height:40px;width:auto">' + Object.keys(jahre).sort().reverse().map(function (x) { return '<option' + (x === j ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select>' +
@@ -738,12 +894,14 @@
       tabelle([['Datum'], ['Was'], ['Betrag', 'r']], bewegungen.map(function (x) {
         var ziel = x.h ? ' data-href="' + x.h + '"' : '';
         return '<tr' + ziel + '><td>' + datum(x.d) + '</td><td>' + (x.h ? '<a href="#' + x.h + '">' + esc(x.t) + '</a>' : esc(x.t) +
-          ' <button class="link-knopf" type="button" data-tab="' + x.tab + '" data-id="' + x.id + '" style="font-size:13px">ändern</button>') + '</td><td class="r" style="color:' + (x.b < 0 ? 'var(--fehler)' : 'var(--gut)') + '">' + eur(x.b) + '</td></tr>';
+          ' <button class="link-knopf" type="button" data-tab="' + x.tab + '" data-id="' + x.id + '" style="font-size:13px">ändern</button>' +
+          (x.datei ? ' · <button class="link-knopf" type="button" data-datei="' + esc(x.datei) + '" style="font-size:13px">Beleg</button>' : (x.tab === 'ausgaben' ? '<span class="neben">ohne Beleg</span>' : ''))) + '</td><td class="r" style="color:' + (x.b < 0 ? 'var(--fehler)' : 'var(--gut)') + '">' + eur(x.b) + '</td></tr>';
       }), 'Keine Bewegungen in ' + j + '.') + '</section></div>');
     zeilenKlick();
     document.getElementById('jahr').addEventListener('change', function (e) { finanzJahr = e.target.value; ansichtFinanzen(); });
     document.getElementById('neu-aus').addEventListener('click', function () { bewegungBearbeiten('ausgaben', null); });
     document.getElementById('neu-ein').addEventListener('click', function () { bewegungBearbeiten('einnahmen', null); });
+    inhalt.querySelectorAll('[data-datei]').forEach(function (b) { b.addEventListener('click', function () { dateiOeffnen(b.dataset.datei); }); });
     inhalt.querySelectorAll('[data-tab]').forEach(function (b) { b.addEventListener('click', function () { bewegungBearbeiten(b.dataset.tab, per(S[b.dataset.tab], b.dataset.id)); }); });
     document.getElementById('csv').addEventListener('click', function () {
       var zeilen = [['Datum', 'Beschreibung', 'Betrag']].concat(bewegungen.slice().reverse().map(function (x) { return [datum(x.d), x.t, x.b.toFixed(2).replace('.', ',')]; }));
@@ -752,20 +910,61 @@
       a.download = 'ARTLENN-MEDIA-Finanzen-' + j + '.csv'; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
     });
   }
-  function bewegungBearbeiten(tab, x) {
-    var aus = tab === 'ausgaben', neu = !x; x = x || { datum: heute(), kategorie: aus ? 'Sonstiges' : 'Sonstiges', betrag: '' };
+  /* Belegdatei öffnen. Das Fenster geht sofort auf, sonst blockt der Browser es nach dem Warten. */
+  function dateiOeffnen(pfad) {
+    var w = window.open('', '_blank');
+    AMD.dateiAdresse(pfad).then(function (url) { if (w) w.location.href = url; else location.href = url; })
+      .catch(function (err) { if (w) w.close(); fehler(err); });
+  }
+  function bewegungBearbeiten(tab, x, vorgabe) {
+    var aus = tab === 'ausgaben', neu = !x; x = x || Object.assign({ datum: heute(), kategorie: 'Sonstiges', betrag: '' }, vorgabe || {});
+    var dateiEl = null;
+    var rg = x.rechnung_id ? per(S.rechnungen, x.rechnung_id) : null;
+    var auftragsWahl = [['', 'Keinem Auftrag']].concat(S.auftraege.filter(function (a) { return a.status !== 'abgelehnt' || a.id === x.auftrag_id; })
+      .sort(function (a, b) { return b.id - a.id; }).map(function (a) { return [a.id, (a.titel || a.nummer) + ' · ' + kundeName(kundeVon(a))]; }));
     dialog({ titel: (neu ? 'Neue ' : '') + (aus ? 'Ausgabe' : 'Einnahme ohne Rechnung'),
       html: '<div class="felder">' + feld('datum', aus ? 'Bezahlt am' : 'Eingegangen am', x.datum, { art: 'date' }) + feld('betrag', 'Betrag in Euro', x.betrag === '' ? '' : komma(x.betrag), { modus: 'decimal', pflicht: true }) +
         feld('beschreibung', 'Beschreibung', x.beschreibung, { breite: 'ganz' }) +
-        (aus ? feld('kategorie', 'Art', x.kategorie, { art: 'select', optionen: AUSGABE_ART, breite: 'ganz' }) : '') + '</div>',
-      knoepfe: (neu ? [] : [{ t: 'Löschen', w: 'weg', art: 'gefahr' }]).concat([{ t: 'Abbrechen', w: '', art: 'zweit' }, { t: 'Speichern', w: 'ok' }]) })
+        (aus ? feld('kategorie', 'Art', x.kategorie, { art: 'select', optionen: AUSGABE_ART, breite: 'ganz' }) +
+          feld('auftrag_id', 'Gehört zu Auftrag', x.auftrag_id || '', { art: 'select', optionen: auftragsWahl, breite: 'ganz' }) +
+          '<label class="haken feld ganz"><input type="checkbox" name="weiterberechnen"' + (x.weiterberechnen ? ' checked' : '') + (rg ? ' disabled' : '') + '> Dem Kunden weiterberechnen (kommt auf die nächste Rechnung zum Auftrag)</label>' +
+          (rg ? '<p class="feld ganz" style="margin:0;color:var(--schrift-3);font-size:14px">Steht schon auf ' + (rg.nummer ? 'Rechnung ' + esc(rg.nummer) : 'einem Rechnungsentwurf') + '.</p>' : '') : '') +
+        '<div class="feld ganz"><label for="f-datei">Beleg als Datei</label>' +
+        (x.datei ? '<div class="datei-zeile"><button type="button" class="link-knopf" id="datei-auf">' + esc(x.datei_name || 'Beleg öffnen') + '</button>' +
+          '<label class="haken" style="min-height:0"><input type="checkbox" name="datei_weg"> Entfernen</label></div>' : '') +
+        '<input class="ein datei" id="f-datei" type="file" accept="image/*,application/pdf">' +
+        '<small>' + (x.datei ? 'Neue Datei ersetzt die bisherige. ' : '') + 'Foto oder PDF, ' + (AMD.modus === 'beispiel' ? 'im Beispielmodus bis 1,5 MB.' : 'bis 20 MB.') + '</small></div></div>',
+      knoepfe: (neu ? [] : [{ t: 'Löschen', w: 'weg', art: 'gefahr' }]).concat([{ t: 'Abbrechen', w: '', art: 'zweit' }, { t: 'Speichern', w: 'ok' }]),
+      nachher: function (d) {
+        dateiEl = d.querySelector('#f-datei');
+        var auf = d.querySelector('#datei-auf');
+        if (auf) auf.addEventListener('click', function () { dateiOeffnen(x.datei); });
+      } })
       .then(function (d) {
-        if (d.wahl === 'weg') return loeschen(tab, x.id).then(function () { hinweis('Gelöscht'); ansichtFinanzen(); });
+        if (d.wahl === 'weg') {
+          if (rg && rg.festgeschrieben) throw new Error('Diese Auslage steht auf Rechnung ' + rg.nummer + ' und bleibt deshalb stehen.');
+          return loeschen(tab, x.id).then(function () { if (x.datei) return AMD.dateiWeg(x.datei).catch(function () {}); })
+            .then(function () { hinweis('Gelöscht'); route(); });
+        }
         if (d.wahl !== 'ok') return;
         if (!zahl(d.werte.betrag)) throw new Error('Bitte einen Betrag eintragen.');
-        var o = Object.assign({}, x, d.werte, { betrag: zahl(d.werte.betrag) });
-        if (!aus) delete o.kategorie;
-        return speichern(tab, o).then(function () { hinweis('Gespeichert'); ansichtFinanzen(); });
+        var neueDatei = dateiEl && dateiEl.files[0];
+        var o = Object.assign({}, x, { datum: d.werte.datum, betrag: zahl(d.werte.betrag), beschreibung: d.werte.beschreibung });
+        if (aus) {
+          var auf = d.werte.auftrag_id ? per(S.auftraege, d.werte.auftrag_id) : null;
+          Object.assign(o, { kategorie: d.werte.kategorie, auftrag_id: auf ? auf.id : null, kunde_id: auf ? auf.kunde_id : null });
+          if (!rg) o.weiterberechnen = !!(auf && d.werte.weiterberechnen);
+        } else delete o.kategorie;
+        var alt = x.datei || '';
+        hinweis(neueDatei ? 'Datei wird hochgeladen …' : 'Speichert …');
+        return (neueDatei ? AMD.dateiHoch(neueDatei) : Promise.resolve(null)).then(function (pfad) {
+          if (pfad) { o.datei = pfad; o.datei_name = neueDatei.name; }
+          else if (d.werte.datei_weg) { o.datei = ''; o.datei_name = ''; }
+          return speichern(tab, o);
+        }).then(function () {
+          // Alte Datei erst wegräumen, wenn der Eintrag sicher gespeichert ist
+          if (alt && alt !== o.datei) return AMD.dateiWeg(alt).catch(function () {});
+        }).then(function () { hinweis('Gespeichert'); route(); });
       }).catch(fehler);
   }
 
@@ -788,7 +987,8 @@
         '<label class="haken feld ganz"><input type="checkbox" name="aktiv"' + (x.aktiv !== false ? ' checked' : '') + '> Zur Auswahl anbieten</label></div>',
       knoepfe: (neu ? [] : [{ t: 'Löschen', w: 'weg', art: 'gefahr' }]).concat([{ t: 'Abbrechen', w: '', art: 'zweit' }, { t: 'Speichern', w: 'ok' }]) })
       .then(function (d) {
-        if (d.wahl === 'weg') return loeschen('leistungen', x.id).then(function () { hinweis('Gelöscht'); ansichtLeistungen(); });
+        if (d.wahl === 'weg') return Promise.all(S.kundenpreise.filter(function (p) { return p.leistung_id === x.id; }).map(function (p) { return loeschen('kundenpreise', p.id); }))
+          .then(function () { return loeschen('leistungen', x.id); }).then(function () { hinweis('Gelöscht'); ansichtLeistungen(); });
         if (d.wahl !== 'ok') return;
         if (!d.werte.name.trim()) throw new Error('Bitte eine Bezeichnung eintragen.');
         return speichern('leistungen', Object.assign({}, x, d.werte, { preis: zahl(d.werte.preis) })).then(function () { hinweis('Gespeichert'); ansichtLeistungen(); });
@@ -816,8 +1016,13 @@
       feld('zahlungsziel', 'Zahlungsziel in Tagen', e.zahlungsziel, { art: 'number' }) +
       feld('steuerruecklage', 'Rücklage für Steuern in Prozent', e.steuerruecklage, { modus: 'decimal' }) +
       feld('fusstext', 'Schlusstext auf Rechnungen', e.fusstext, { art: 'textarea', breite: 'ganz', zeilen: 2 }) +
+      '</div></div></section><section class="block"><h2>Mahnungen</h2><div class="innen"><div class="felder">' +
+      feld('verzugszins', 'Verzugszinsen in Prozent im Jahr', e.verzugszins, { modus: 'decimal', hilfe: 'Kommen ab der 1. Mahnung dazu.' }) +
+      feld('mahntext_1', 'Text der Zahlungserinnerung', e.mahntext_1, { art: 'textarea', breite: 'ganz', zeilen: 2 }) +
+      feld('mahntext_2', 'Text der 1. Mahnung', e.mahntext_2, { art: 'textarea', breite: 'ganz', zeilen: 2 }) +
+      feld('mahntext_3', 'Text der 2. Mahnung', e.mahntext_3, { art: 'textarea', breite: 'ganz', zeilen: 2 }) +
       '</div><div class="formfuss"><button class="knopf klein" type="submit">Speichern</button></div></div></section></form>' +
-      '<section class="block"><h2>Sicherung</h2><div class="innen"><p style="margin:0 0 14px;color:var(--schrift-2)">Lädt alle Kunden, Aufträge, Belege und Finanzen als eine Datei herunter.</p>' +
+      '<section class="block"><h2>Sicherung</h2><div class="innen"><p style="margin:0 0 14px;color:var(--schrift-2)">Lädt alle Kunden, Aufträge, Belege und Finanzen als eine Datei herunter. Die Belegdateien selbst (Fotos, PDFs) sind darin nicht enthalten.</p>' +
       '<div class="formfuss" style="margin:0"><button class="knopf zweit klein" type="button" id="sichern">Sicherung herunterladen</button>' +
       (AMD.modus === 'beispiel' ? '<button class="knopf gefahr klein" type="button" id="leeren">Beispieldaten löschen</button>' : '') + '</div></div></section>');
     var form = document.getElementById('form');
@@ -861,7 +1066,7 @@
   }
 
   function laden() {
-    return Promise.all(['kunden', 'leistungen', 'auftraege', 'rechnungen', 'ausgaben', 'einnahmen'].map(function (t) {
+    return Promise.all(['kunden', 'leistungen', 'auftraege', 'rechnungen', 'ausgaben', 'einnahmen', 'zeiten', 'kundenpreise'].map(function (t) {
       return AMD.alle(t).then(function (l) { S[t] = l.map(function (x) { x.id = Number(x.id); return x; }); });
     })).then(function () { return AMD.einstellungen(); }).then(function (e) { S.e = e; });
   }

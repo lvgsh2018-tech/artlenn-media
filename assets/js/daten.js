@@ -9,7 +9,8 @@
   var C = window.AM_CONFIG || {};
   var echt = !!(C.SUPABASE_URL && C.SUPABASE_KEY && window.supabase);
   var sb = echt ? window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_KEY) : null;
-  var TABELLEN = ['kunden', 'leistungen', 'auftraege', 'rechnungen', 'ausgaben', 'einnahmen'];
+  var TABELLEN = ['kunden', 'leistungen', 'auftraege', 'rechnungen', 'ausgaben', 'einnahmen', 'zeiten', 'kundenpreise'];
+  var ABLAGE = 'belege';
   var SCHLUESSEL = 'artlenn-orbit-beispiel';
 
   /* Startwerte, wie sie in MeinOrbit am Mac stehen (Stand 2026-10-21).
@@ -22,7 +23,10 @@
     bank_inhaber: 'Lennart Schleef', bank_name: '', bank_iban: '', bank_bic: '',
     kleinunternehmer: 'ja', hinweis_19: 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.',
     steuersatz: '19', zahlungsziel: '14', fusstext: 'Vielen Dank für die gute Zusammenarbeit.',
-    steuerruecklage: '25'
+    steuerruecklage: '25', verzugszins: '9',
+    mahntext_1: 'Sicher ist es Ihrer Aufmerksamkeit entgangen: Die unten genannte Rechnung ist noch offen. Bitte gleichen Sie den Betrag in den nächsten Tagen aus.',
+    mahntext_2: 'Trotz unserer Zahlungserinnerung ist die unten genannte Rechnung weiterhin offen. Wir bitten Sie, den Betrag umgehend zu überweisen.',
+    mahntext_3: 'Die unten genannte Rechnung ist trotz mehrfacher Erinnerung nicht ausgeglichen. Wir setzen Ihnen eine letzte Frist, bevor wir weitere Schritte einleiten.'
   };
   var START_LEISTUNGEN = [
     ["Werbung auf Bad Salzuflen News: Reel", "Dreh, Schnitt, Text, 1 Korrekturrunde", "Stück", 249.0],
@@ -66,9 +70,19 @@
         d.leistungen.push({ id: ++d.seq.leistungen, name: l[0], beschreibung: l[1], einheit: l[2], preis: l[3], aktiv: true });
       });
     }
+    // Tabellen, die später dazugekommen sind, in alten Beispieldaten nachziehen
+    TABELLEN.forEach(function (t) { if (!d[t]) { d[t] = []; d.seq[t] = 0; } });
+    if (!d.dateien) d.dateien = {};
     return d;
   }
-  function schreiben(d) { localStorage.setItem(SCHLUESSEL, JSON.stringify(d)); }
+  function schreiben(d) {
+    try { localStorage.setItem(SCHLUESSEL, JSON.stringify(d)); }
+    catch (e) { throw new Error('Der Speicher dieses Browsers ist voll. Im Beispielmodus passen nur kleine Dateien hinein.'); }
+  }
+  function dateiPfad(datei) { return heute().slice(0, 4) + '/' + Date.now().toString(36) + '-' + datei.name.replace(/[^\w.\-]+/g, '_'); }
+  function alsDataUrl(datei) {
+    return new Promise(function (ok, nein) { var l = new FileReader(); l.onload = function () { ok(l.result); }; l.onerror = function () { nein(new Error('Datei ließ sich nicht lesen.')); }; l.readAsDataURL(datei); });
+  }
   function kopie(x) { return JSON.parse(JSON.stringify(x)); }
 
   var demo = {
@@ -82,7 +96,7 @@
         var i = liste.findIndex(function (x) { return x.id === o.id; });
         if (i < 0) return Promise.reject(new Error('Eintrag nicht gefunden'));
         if (t === 'rechnungen' && liste[i].festgeschrieben) {
-          var erlaubt = ['status', 'bezahlt_am', 'bezahlt_betrag', 'storniert_durch', 'notiz_intern'];
+          var erlaubt = ['status', 'bezahlt_am', 'bezahlt_betrag', 'storniert_durch', 'notiz_intern', 'mahnstufe', 'mahnung_am'];
           Object.keys(o).forEach(function (k) {
             if (erlaubt.indexOf(k) < 0 && JSON.stringify(o[k]) !== JSON.stringify(liste[i][k])) throw new Error('Festgeschriebene Rechnung kann nicht geändert werden.');
           });
@@ -110,6 +124,18 @@
       var d = lesen(); d.einstellungen = Object.assign(d.einstellungen || {}, werte); schreiben(d);
       return Promise.resolve();
     },
+    /* Dateien liegen im Beispielmodus als Text im Browser – deshalb klein halten. */
+    dateiHoch: function (datei) {
+      if (datei.size > 1500000) return Promise.reject(new Error('Im Beispielmodus gehen nur Dateien bis 1,5 MB. Mit Datenbank sind es 20 MB.'));
+      return alsDataUrl(datei).then(function (url) { var d = lesen(), pfad = dateiPfad(datei); d.dateien[pfad] = url; schreiben(d); return pfad; });
+    },
+    // Browser öffnen keine data:-Adressen als Seite, deshalb als Blob weiterreichen
+    dateiAdresse: function (pfad) {
+      var u = lesen().dateien[pfad];
+      if (!u) return Promise.reject(new Error('Datei nicht gefunden.'));
+      return fetch(u).then(function (r) { return r.blob(); }).then(function (b) { return URL.createObjectURL(b); });
+    },
+    dateiWeg: function (pfad) { var d = lesen(); delete d.dateien[pfad]; schreiben(d); return Promise.resolve(); },
     zuruecksetzen: function () { localStorage.removeItem(SCHLUESSEL); return Promise.resolve(); },
     alles: function () { return Promise.resolve(lesen()); }
   };
@@ -147,6 +173,14 @@
       var zeilen = Object.keys(werte).map(function (k) { return { schluessel: k, wert: String(werte[k] == null ? '' : werte[k]) }; });
       return sb.from('einstellungen').upsert(zeilen).then(pruefen);
     },
+    dateiHoch: function (datei) {
+      if (datei.size > 20971520) return Promise.reject(new Error('Die Datei ist größer als 20 MB.'));
+      var pfad = dateiPfad(datei);
+      return sb.storage.from(ABLAGE).upload(pfad, datei, { contentType: datei.type || 'application/octet-stream' }).then(pruefen).then(function () { return pfad; });
+    },
+    // Kurzlebiger Link, weil die Ablage nicht öffentlich ist
+    dateiAdresse: function (pfad) { return sb.storage.from(ABLAGE).createSignedUrl(pfad, 120).then(pruefen).then(function (r) { return r.signedUrl; }); },
+    dateiWeg: function (pfad) { return sb.storage.from(ABLAGE).remove([pfad]).then(pruefen); },
     alles: function () {
       var d = {};
       return Promise.all(TABELLEN.map(function (t) { return supa.alle(t).then(function (r) { d[t] = r; }); }))
