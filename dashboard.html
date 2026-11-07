@@ -252,6 +252,13 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 .ordnerwahl select{width:100%;appearance:none;-webkit-appearance:none;border:1px solid var(--rand);background:var(--glas-hell) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23bbb' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;color:var(--schrift);font:inherit;font-size:13.5px;font-weight:500;padding:9px 32px 9px 36px;border-radius:10px;cursor:pointer;transition:border-color .2s}
 .ordnerwahl select:hover{border-color:var(--rand-hell)}
 .ordnerwahl option,.ordnerwahl optgroup{color:#111}
+.redaktion{display:flex;flex-direction:column;height:calc(100vh - 130px);min-height:560px;padding:14px;overflow:hidden}
+.redaktion-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 6px 12px}
+.redaktion-kopf h2{font-size:15px;font-weight:600}
+.redaktion-kopf a{font-size:13px;color:var(--schrift-3);text-decoration:none}
+.redaktion-kopf a:hover{color:var(--schrift)}
+.redaktion iframe{flex:1;width:100%;border:0;border-radius:14px;background:#fff}
+@media (max-width:760px){.redaktion{height:calc(100vh - 190px)}}
 .platz{padding:60px 30px;text-align:center;color:var(--schrift-2)}
 
 :focus-visible{outline:2px solid var(--petrol);outline-offset:2px}
@@ -269,7 +276,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   .suche{min-width:150px}
 }
 /* Schmaler als iPad quer: Reiter ohne Symbole, damit alle hineinpassen */
-@media (max-width:1100px){.reiter button svg.i{display:none}.reiter button{padding:8px 11px}.suche{min-width:120px}}
+@media (max-width:1300px){.reiter button svg.i{display:none}.reiter button{padding:8px 11px}.suche{min-width:120px}}
 /* iPad hochkant und kleiner: zwei Kacheln nebeneinander */
 @media (max-width:900px){.s3{grid-column:span 6}.s4,.s5,.s7,.s8{grid-column:span 12}}
 @media (max-width:760px){
@@ -320,6 +327,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   <symbol id="i-spam" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M12 8v5M12 16v.5"/></symbol>
   <symbol id="i-punkt" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/></symbol>
   <symbol id="i-ordner" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-stift" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
   <symbol id="i-such" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
 </svg>
 
@@ -329,6 +337,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
     <button data-ziel="mail" aria-label="E-Mails"><svg class="i"><use href="#i-mail"/></svg></button>
     <button data-ziel="kalender" aria-label="Kalender"><svg class="i"><use href="#i-kal"/></svg></button>
     <button data-ziel="nachrichten" aria-label="Nachrichten"><svg class="i"><use href="#i-news"/></svg></button>
+    <button data-ziel="redaktion" aria-label="Redaktion Bad Salzuflen News"><svg class="i"><use href="#i-stift"/></svg></button>
     <button data-ziel="orbit" aria-label="MeinOrbit"><svg class="i"><use href="#i-orbit"/></svg></button>
     <button data-ziel="whatsapp" aria-label="WhatsApp öffnen"><svg class="i"><use href="#i-chat"/></svg></button>
     <button class="unten" id="abmelden" aria-label="Abmelden" title="Abmelden"><svg class="i"><use href="#i-raus"/></svg></button>
@@ -342,6 +351,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
         <button role="tab" data-ziel="mail"><svg class="i"><use href="#i-mail"/></svg>E-Mails</button>
         <button role="tab" data-ziel="kalender"><svg class="i"><use href="#i-kal"/></svg>Kalender</button>
         <button role="tab" data-ziel="nachrichten"><svg class="i"><use href="#i-news"/></svg>Nachrichten</button>
+        <button role="tab" data-ziel="redaktion"><svg class="i"><use href="#i-stift"/></svg>Redaktion</button>
         <button role="tab" data-ziel="orbit"><svg class="i"><use href="#i-orbit"/></svg>MeinOrbit</button>
       </div>
       <div class="rechts">
@@ -463,6 +473,16 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
       </div>
     </section>
 
+    <section class="ansicht" data-ansicht="redaktion" hidden>
+      <div class="glas redaktion">
+        <div class="redaktion-kopf">
+          <h2>Redaktion · Bad Salzuflen News</h2>
+          <a class="mehr" href="https://badsalzuflennews.de/admin.html" target="_blank" rel="noopener">In neuem Tab öffnen</a>
+        </div>
+        <iframe id="redaktion-rahmen" title="Redaktionsbereich Bad Salzuflen News" data-src="https://badsalzuflennews.de/admin.html"></iframe>
+      </div>
+    </section>
+
     <section class="ansicht" data-ansicht="kalender" hidden>
       <div class="glas k kalender" id="kal-liste"><p class="platz">wird geladen</p></div>
     </section>
@@ -482,7 +502,9 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   function wechseln(ziel){
     if(ziel==="orbit"){location.href="orbit.html";return}
     if(ziel==="whatsapp"){window.open("https://web.whatsapp.com","_blank","noopener");return}
-    var welche=(ziel==="start"||ziel==="mail"||ziel==="kalender")?ziel:"leer";
+    var welche=(ziel==="start"||ziel==="mail"||ziel==="kalender"||ziel==="redaktion")?ziel:"leer";
+    // Redaktionsbereich erst beim ersten Öffnen laden
+    if(ziel==="redaktion"){var rf=document.getElementById("redaktion-rahmen"); if(!rf.src) rf.src=rf.dataset.src;}
     document.querySelectorAll(".ansicht").forEach(function(a){a.hidden=a.dataset.ansicht!==welche});
     if(welche==="leer")document.getElementById("platz").textContent=texte[ziel]||"";
     document.querySelectorAll(".reiter button").forEach(function(b){b.setAttribute("aria-selected",b.dataset.ziel===ziel)});
