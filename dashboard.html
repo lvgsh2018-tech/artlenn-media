@@ -221,14 +221,29 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 .termin span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:anywhere}
 .tag .weitere{font-size:11px;color:var(--schrift-3);padding-left:7px}
 .tag .frei{font-size:11.5px;color:var(--schrift-3);margin:auto 0;text-align:center;opacity:.7}
-@media (max-width:1100px){.woche{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:900px){.woche{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:760px){.woche{grid-template-columns:1fr}.tag{min-height:0;border-left:0;padding:10px 0;border-top:1px solid rgba(255,255,255,.09)}.tag:first-child{border-top:0}}
 .profilbild{object-fit:cover;padding:0;border:1.5px solid rgba(255,255,255,.35)}
 .platz{padding:60px 30px;text-align:center;color:var(--schrift-2)}
 
 :focus-visible{outline:2px solid var(--petrol);outline-offset:2px}
 
-@media (max-width:1200px){.s3{grid-column:span 6}.s4,.s5,.s7,.s8{grid-column:span 12}}
+/* iPad quer und Mac: Aufbau wie am großen Bildschirm, nur etwas kompakter */
+@media (max-width:1300px){
+  .rahmen{gap:16px;padding:18px 18px 22px 14px}
+  .raster{gap:14px}
+  .k{padding:16px}
+  .zahl .wert{font-size:26px}
+  .zahl svg.linie{width:70px}
+  .gruss h1{font-size:21px;white-space:nowrap}
+  .gruss p{white-space:nowrap}
+  .reiter button{padding:8px 12px}
+  .suche{min-width:150px}
+}
+/* Schmaler als iPad quer: Reiter ohne Symbole, damit alle hineinpassen */
+@media (max-width:1100px){.reiter button svg.i{display:none}.reiter button{padding:8px 11px}.suche{min-width:120px}}
+/* iPad hochkant und kleiner: zwei Kacheln nebeneinander */
+@media (max-width:900px){.s3{grid-column:span 6}.s4,.s5,.s7,.s8{grid-column:span 12}}
 @media (max-width:760px){
   .rahmen{grid-template-columns:1fr;padding:12px;gap:12px}
   .leiste{position:fixed;top:auto;transform:none;bottom:12px;left:12px;right:12px;height:auto;flex-direction:row;justify-content:space-around;padding:6px;z-index:5}
@@ -430,6 +445,6 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   document.getElementById("datum").textContent=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 })();
 </script>
-<script src="assets/js/dashboard.js?v=20261107r"></script>
+<script src="assets/js/dashboard.js?v=20261107s"></script>
 </body>
 </html>
