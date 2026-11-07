@@ -234,6 +234,24 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 @media (max-width:900px){.woche{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:760px){.woche{grid-template-columns:1fr}.tag{min-height:0;border-left:0;padding:10px 0;border-top:1px solid rgba(255,255,255,.09)}.tag:first-child{border-top:0}}
 .profilbild{object-fit:cover;padding:0;border:1.5px solid rgba(255,255,255,.35)}
+.mailrahmen{margin-top:4px;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 10px 30px -12px rgba(0,0,0,.45)}
+.mailrahmen iframe{display:block;width:100%;height:240px;border:0;background:#fff}
+.aeltere{margin-top:8px;border:1px solid var(--rand);background:transparent;color:var(--schrift-2);font:inherit;font-size:13px;padding:9px;border-radius:10px;cursor:pointer;transition:background .2s}
+.aeltere:hover{background:var(--glas-hell)}
+.aeltere[disabled]{opacity:.5;cursor:default}
+.werkzeuge{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:-6px 0 16px}
+.werkzeuge button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rand);background:var(--glas-hell);color:var(--schrift-2);font:inherit;font-size:12.5px;padding:6px 10px;border-radius:9px;cursor:pointer;transition:background .2s,color .2s}
+.werkzeuge button:hover{background:rgba(255,255,255,.16);color:var(--schrift)}
+.werkzeuge button[disabled]{opacity:.5;cursor:default}
+.werkzeuge button svg.i{width:15px;height:15px}
+.werkzeug-meldung{font-size:12.5px;color:var(--schrift-3);margin-left:4px}
+.werkzeuge select{appearance:none;-webkit-appearance:none;border:1px solid var(--rand);background:var(--glas-hell) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23bbb' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center;color:var(--schrift-2);font:inherit;font-size:12.5px;padding:6px 28px 6px 10px;border-radius:9px;cursor:pointer}
+.werkzeuge select option{color:#111}
+.ordnerwahl{position:relative;display:flex;align-items:center;margin:0 0 12px}
+.ordnerwahl svg.i{position:absolute;left:11px;width:16px;height:16px;color:var(--schrift-2);pointer-events:none}
+.ordnerwahl select{width:100%;appearance:none;-webkit-appearance:none;border:1px solid var(--rand);background:var(--glas-hell) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23bbb' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;color:var(--schrift);font:inherit;font-size:13.5px;font-weight:500;padding:9px 32px 9px 36px;border-radius:10px;cursor:pointer;transition:border-color .2s}
+.ordnerwahl select:hover{border-color:var(--rand-hell)}
+.ordnerwahl option,.ordnerwahl optgroup{color:#111}
 .platz{padding:60px 30px;text-align:center;color:var(--schrift-2)}
 
 :focus-visible{outline:2px solid var(--petrol);outline-offset:2px}
@@ -297,6 +315,11 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   <symbol id="i-auge" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-kurs" viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></symbol>
   <symbol id="i-insta" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></symbol>
+  <symbol id="i-archiv" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/></symbol>
+  <symbol id="i-papierkorb" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-spam" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M12 8v5M12 16v.5"/></symbol>
+  <symbol id="i-punkt" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/></symbol>
+  <symbol id="i-ordner" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
   <symbol id="i-such" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
 </svg>
 
@@ -420,7 +443,21 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
       <div class="mail">
         <div class="spalte glas">
           <div class="konten" id="konten-knoepfe"></div>
+          <label class="ordnerwahl">
+            <svg class="i" aria-hidden="true"><use href="#i-ordner"/></svg>
+            <select id="ordner-wahl" aria-label="Ordner">
+              <optgroup label="Ordner">
+                <option value="art:inbox" selected>Posteingang</option>
+                <option value="art:sent">Gesendet</option>
+                <option value="art:drafts">Entwürfe</option>
+                <option value="art:archive">Archiv</option>
+                <option value="art:junk">Spam</option>
+                <option value="art:trash">Papierkorb</option>
+              </optgroup>
+            </select>
+          </label>
           <ul class="liste mails" id="mails-lang"></ul>
+          <button type="button" class="aeltere" id="aeltere" hidden>Ältere Mails laden</button>
         </div>
         <div class="lesen glas" id="lesen"></div>
       </div>
@@ -461,6 +498,6 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   document.getElementById("datum").textContent=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 })();
 </script>
-<script src="assets/js/dashboard.js?v=20261108a"></script>
+<script src="assets/js/dashboard.js?v=20261108f"></script>
 </body>
 </html>

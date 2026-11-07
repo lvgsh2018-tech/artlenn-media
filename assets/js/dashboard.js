@@ -185,7 +185,7 @@
 
   /* ---------------- Konten: Mails und Apple-Kalender ---------------- */
 
-  var KONTEN = { liste: [], mails: [], filter: "alle", aktiv: null };
+  var KONTEN = { liste: [], mails: [], filter: "alle", aktiv: null, art: "inbox", pfad: null, eigene: null, ansicht: null, aelteste: {}, mehr: {}, laeuft: 0 };
 
   function nichtVerbunden(text) {
     leer("mails-kurz", text);
@@ -247,12 +247,68 @@
   }
   function mailZeile(m) {
     var i = KONTEN.mails.indexOf(m);
-    return '<li data-mail="' + i + '" class="' + (m.neu ? "neu" : "") + '"><span class="quelle">' + kuerzel(m) + '</span><span class="t"><b>' + esc(m.von) + "</b><small>" + esc(m.betreff) + '</small></span><span class="r">' + mailZeit(m.datum) + "</span></li>";
+    // In Gesendet und Entwürfe zählt der Empfänger, nicht man selbst
+    var wer = (m.art === "sent" || m.art === "drafts") && m.an ? "An: " + m.an : m.von;
+    return '<li data-mail="' + i + '" class="' + (m.neu ? "neu" : "") + '"><span class="quelle">' + kuerzel(m) + '</span><span class="t"><b>' + esc(wer) + "</b><small>" + esc(m.betreff) + '</small></span><span class="r">' + mailZeit(m.datum) + "</span></li>";
   }
   function mailListe() {
-    var liste = KONTEN.mails.filter(function (m) { return KONTEN.filter === "alle" || m.konto === KONTEN.filter; });
-    $("mails-lang").innerHTML = liste.length ? liste.map(mailZeile).join("") : '<li class="leer">Keine Mails.</li>';
+    var liste = KONTEN.ansicht
+      ? KONTEN.ansicht.map(function (i) { return KONTEN.mails[i]; })
+      : KONTEN.mails.filter(function (m) { return !m.weg && (KONTEN.filter === "alle" || m.konto === KONTEN.filter); });
+    $("mails-lang").innerHTML = liste.length ? liste.map(mailZeile).join("") : '<li class="leer">Keine Mails in diesem Ordner.</li>';
     if (KONTEN.aktiv === null) $("lesen").innerHTML = '<p class="platz">Links eine Mail auswählen.</p>';
+    var mehr = Object.keys(KONTEN.mehr).some(function (k) { return KONTEN.mehr[k]; });
+    $("aeltere").hidden = !KONTEN.ansicht || !mehr;
+  }
+
+  /* Eigene Ordner (z. B. „Presse“) für Auswahl und „Verschieben nach …“ */
+  async function eigeneOrdnerLaden() {
+    KONTEN.eigene = [];
+    var r;
+    try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "ordnerliste" } }); }
+    catch (f) { r = { error: f }; }
+    KONTEN.eigene = (r && r.data && r.data.ordner) || [];
+    var gruppen = {};
+    KONTEN.eigene.forEach(function (o, i) { (gruppen[o.kontoName] = gruppen[o.kontoName] || []).push('<option value="eigen:' + i + '">' + esc(o.name) + "</option>"); });
+    var wahl = $("ordner-wahl"), jetzt = wahl.value;
+    [].forEach.call(wahl.querySelectorAll("optgroup[data-eigen]"), function (g) { g.remove(); });
+    wahl.insertAdjacentHTML("beforeend", Object.keys(gruppen).map(function (g) { return '<optgroup data-eigen label="Eigene Ordner · ' + esc(g) + '">' + gruppen[g].join("") + "</optgroup>"; }).join(""));
+    wahl.value = jetzt;
+    if (KONTEN.aktiv !== null) {
+      var leiste = $("lesen").querySelector(".werkzeuge");
+      if (leiste) leiste.outerHTML = werkzeugHtml(KONTEN.mails[KONTEN.aktiv]);
+    }
+  }
+
+  /* Ordner laden: neu = von vorn, sonst die nächsten älteren Mails anhängen */
+  async function ordnerLaden(neu) {
+    var nr = ++KONTEN.laeuft;
+    var konten = KONTEN.art === "eigen" ? [KONTEN.pfad.konto] : KONTEN.filter === "alle" ? [] : [KONTEN.filter];
+    var vor = {};
+    if (neu) {
+      KONTEN.ansicht = []; KONTEN.aelteste = {}; KONTEN.mehr = {}; KONTEN.aktiv = null;
+      $("mails-lang").innerHTML = '<li class="leer">wird geladen</li>';
+      $("aeltere").hidden = true;
+    } else {
+      Object.keys(KONTEN.mehr).forEach(function (k) { if (KONTEN.mehr[k]) vor[k] = KONTEN.aelteste[k]; });
+      konten = Object.keys(vor);
+      if (!konten.length) return;
+      $("aeltere").disabled = true; $("aeltere").textContent = "wird geladen …";
+    }
+    var r;
+    try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "ordner", art: KONTEN.art, pfad: KONTEN.pfad ? KONTEN.pfad.pfad : "", konten: konten, vor: vor } }); }
+    catch (f) { r = { error: f }; }
+    if (nr !== KONTEN.laeuft) return; // inzwischen anderer Ordner gewählt
+    $("aeltere").disabled = false; $("aeltere").textContent = "Ältere Mails laden";
+    if (r.error || !r.data) { $("mails-lang").innerHTML = '<li class="leer">Der Ordner ließ sich nicht laden.</li>'; return; }
+    var d = r.data;
+    (d.mails || []).forEach(function (m) { KONTEN.mails.push(m); KONTEN.ansicht.push(KONTEN.mails.length - 1); });
+    KONTEN.ansicht.sort(function (a, b) { return String(KONTEN.mails[b].datum).localeCompare(String(KONTEN.mails[a].datum)); });
+    Object.keys(d.mehr || {}).forEach(function (k) { KONTEN.mehr[k] = d.mehr[k]; KONTEN.aelteste[k] = d.aelteste[k]; });
+    mailListe();
+    var hinweis = (d.fehlt || []).length ? "Kein passender Ordner bei: " + d.fehlt.join(", ") : "";
+    if ((d.fehler || []).length) hinweis += (hinweis ? " · " : "") + d.fehler.join(" · ");
+    if (hinweis) $("mails-lang").insertAdjacentHTML("beforeend", '<li class="leer">' + esc(hinweis) + "</li>");
   }
 
   async function mailOeffnen(i) {
@@ -263,17 +319,101 @@
     var oeffnen = konto.art === "gmail"
       ? "https://mail.google.com/mail/u/?authuser=" + encodeURIComponent(konto.adresse || "")
       : "https://www.icloud.com/mail/";
-    var kopfHtml = '<div class="kopfzeile"><span class="person">' + esc((m.von || "?").charAt(0).toUpperCase()) + "</span><div><b>" + esc(m.von) + '</b><div style="color:var(--schrift-3);font-size:13px">' + esc(m.vonAdresse) + " · " + esc(m.kontoName) + (m.datum ? " · " + new Date(m.datum).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" }) : "") + "</div></div></div><h3>" + esc(m.betreff) + "</h3>";
+    var kopfHtml = werkzeugHtml(m) + '<div class="kopfzeile"><span class="person">' + esc((m.von || "?").charAt(0).toUpperCase()) + "</span><div><b>" + esc(m.von) + '</b><div style="color:var(--schrift-3);font-size:13px">' + esc(m.vonAdresse) + " · " + esc(m.kontoName) + (m.datum ? " · " + new Date(m.datum).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" }) : "") + "</div></div></div><h3>" + esc(m.betreff) + "</h3>";
     $("lesen").innerHTML = kopfHtml + '<p class="text wenig">Wird geladen …</p>';
     var r;
-    try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "mail", konto: m.konto, uid: m.uid } }); }
+    try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "mail", konto: m.konto, uid: m.uid, ordner: m.ordner || "INBOX" } }); }
     catch (f) { r = { error: f }; }
     if (KONTEN.aktiv !== i) return; // inzwischen andere Mail angeklickt
     if (r.error || !r.data || r.data.fehler) { $("lesen").innerHTML = kopfHtml + '<p class="text">Die Mail ließ sich nicht laden.</p>'; return; }
     var d = r.data;
-    $("lesen").innerHTML = kopfHtml + '<div class="text">' + esc(d.text || "(kein Text)") + "</div>" +
-      (d.anhaenge && d.anhaenge.length ? '<p class="anh">Anhänge: ' + esc(d.anhaenge.join(", ")) + "</p>" : "") +
+    if (m.neu) {
+      m.neu = false; mailAendern(i, "gelesen", "", true);
+      [].forEach.call(document.querySelectorAll('[data-mail="' + i + '"]'), function (li) { li.classList.remove("neu"); });
+    }
+    var fuss = (d.anhaenge && d.anhaenge.length ? '<p class="anh">Anhänge: ' + esc(d.anhaenge.join(", ")) + "</p>" : "") +
       '<a class="knopf link" href="' + esc(oeffnen) + '" target="_blank" rel="noopener">In ' + esc(konto.art === "gmail" ? "Gmail" : "iCloud Mail") + " antworten</a>";
+    if (!d.html) {
+      $("lesen").innerHTML = kopfHtml + '<div class="text">' + esc(d.text || "(kein Text)") + "</div>" + fuss;
+      return;
+    }
+    $("lesen").innerHTML = kopfHtml + '<div class="mailrahmen"></div>' + fuss;
+    mailGestaltet($("lesen").querySelector(".mailrahmen"), d.html);
+  }
+
+  /* ---------------- Aufräumen: Knöpfe über der geöffneten Mail ---------------- */
+
+  var SYM = { archive: "i-archiv", inbox: "i-mail", junk: "i-spam", trash: "i-papierkorb", ungelesen: "i-punkt" };
+  function werkzeugHtml(m) {
+    var art = m.art || "inbox", k = [];
+    if (art !== "archive" && art !== "trash") k.push(["verschieben", "archive", "Archivieren"]);
+    if (art === "junk") k.push(["verschieben", "inbox", "Kein Spam"]);
+    else if (art !== "inbox") k.push(["verschieben", "inbox", "In Posteingang"]);
+    if (art !== "junk" && art !== "trash" && art !== "sent" && art !== "drafts") k.push(["verschieben", "junk", "Spam"]);
+    if (art !== "trash") k.push(["verschieben", "trash", "Papierkorb"]);
+    k.push(["ungelesen", "", "Als ungelesen"]);
+    var eigene = (KONTEN.eigene || []).filter(function (o) { return o.konto === m.konto && o.pfad !== m.ordner; });
+    var auswahl = eigene.length ? '<select data-verschieben aria-label="Verschieben nach"><option value="">Verschieben nach …</option>' +
+      eigene.map(function (o) { return '<option value="' + esc(o.pfad) + '">' + esc(o.name) + "</option>"; }).join("") + "</select>" : "";
+    return '<div class="werkzeuge" role="toolbar" aria-label="Mail bearbeiten">' + k.map(function (b) {
+      return '<button type="button" data-was="' + b[0] + '" data-nach="' + b[1] + '"><svg class="i" aria-hidden="true"><use href="#' + SYM[b[1] || "ungelesen"] + '"/></svg>' + b[2] + "</button>";
+    }).join("") + auswahl + '<span class="werkzeug-meldung" aria-live="polite"></span></div>';
+  }
+
+  function mailWeg(i) {
+    var m = KONTEN.mails[i]; if (m) m.weg = true;
+    if (KONTEN.ansicht) {
+      var pos = KONTEN.ansicht.indexOf(i);
+      if (pos >= 0) KONTEN.ansicht.splice(pos, 1);
+      KONTEN.aktiv = null;
+      mailListe();
+      var naechste = KONTEN.ansicht[pos] !== undefined ? KONTEN.ansicht[pos] : KONTEN.ansicht[pos - 1];
+      if (naechste !== undefined) mailOeffnen(naechste);
+    } else { KONTEN.aktiv = null; mailListe(); }
+    // Übersicht mitziehen
+    var kurz = KONTEN.mails.filter(function (x) { return !x.weg && !x.ordner; }).slice(0, 4);
+    $("mails-kurz").innerHTML = kurz.length ? kurz.map(mailZeile).join("") : '<li class="leer">Keine Mails im Posteingang.</li>';
+  }
+
+  async function mailAendern(i, was, nach, leise, zielPfad) {
+    var m = KONTEN.mails[i]; if (!m) return false;
+    var r;
+    try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "aufraeumen", konto: m.konto, ordner: m.ordner || "INBOX", uids: [m.uid], was: was, ziel: nach, zielPfad: zielPfad || "" } }); }
+    catch (f) { r = { error: f }; }
+    var ok = !r.error && r.data && r.data.ok;
+    if (leise) return ok;
+    var meldung = $("lesen").querySelector(".werkzeug-meldung");
+    if (!ok) { if (meldung) meldung.textContent = "Das hat nicht geklappt."; return false; }
+    if (was === "verschieben") mailWeg(i);
+    else if (was === "ungelesen") {
+      m.neu = true;
+      [].forEach.call(document.querySelectorAll('[data-mail="' + i + '"]'), function (li) { li.classList.add("neu"); });
+      if (meldung) meldung.textContent = "Als ungelesen markiert";
+    }
+    return true;
+  }
+
+  /* Gestaltete Mail in einem abgeschotteten Rahmen zeigen: Skripte aus der Mail
+     laufen nicht (sandbox ohne allow-scripts), nur Bilder und Gestaltung dürfen
+     geladen werden; Links öffnen in einem neuen Tab. */
+  function mailGestaltet(ziel, html) {
+    var f = document.createElement("iframe");
+    f.setAttribute("sandbox", "allow-same-origin allow-popups allow-popups-to-escape-sandbox");
+    f.setAttribute("referrerpolicy", "no-referrer");
+    f.title = "Inhalt der E-Mail";
+    f.srcdoc = '<!doctype html><html><head><meta charset="utf-8">' +
+      '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src https: data:; style-src \'unsafe-inline\' https:; font-src https: data:">' +
+      '<base target="_blank"><style>html,body{margin:0;background:#fff}body{padding:18px;color:#1d1d1f;font:15px/1.5 -apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}</style></head><body>' +
+      html + "</body></html>";
+    ziel.appendChild(f);
+    function hoehe() {
+      try { var doc = f.contentDocument; if (doc && doc.documentElement) f.style.height = Math.max(200, doc.documentElement.scrollHeight) + "px"; } catch (e) { /* egal */ }
+    }
+    f.addEventListener("load", function () {
+      hoehe();
+      try { [].forEach.call(f.contentDocument.images, function (b) { b.addEventListener("load", hoehe); }); } catch (e) { /* egal */ }
+      setTimeout(hoehe, 600); setTimeout(hoehe, 2000);
+    });
   }
 
   function kalenderZeigen(d) {
@@ -601,7 +741,39 @@
     var b = e.target.closest("[data-konto]"); if (!b) return;
     KONTEN.filter = b.dataset.konto; KONTEN.aktiv = null;
     [].forEach.call(this.children, function (x) { x.setAttribute("aria-pressed", x === b); });
-    mailListe();
+    if (KONTEN.art === "eigen" && KONTEN.filter !== "alle" && KONTEN.pfad.konto !== KONTEN.filter) {
+      KONTEN.art = "inbox"; KONTEN.pfad = null; $("ordner-wahl").value = "art:inbox";
+    }
+    ordnerLaden(true);
+  });
+  $("ordner-wahl").addEventListener("change", function () {
+    var v = this.value;
+    if (v.indexOf("eigen:") === 0) { KONTEN.art = "eigen"; KONTEN.pfad = KONTEN.eigene[+v.slice(6)]; }
+    else { KONTEN.art = v.slice(4); KONTEN.pfad = null; }
+    ordnerLaden(true);
+  });
+  $("aeltere").addEventListener("click", function () { ordnerLaden(false); });
+  $("lesen").addEventListener("change", function (e) {
+    var s = e.target.closest("[data-verschieben]"); if (!s || !s.value || KONTEN.aktiv === null) return;
+    var meldung = this.querySelector(".werkzeug-meldung"); if (meldung) meldung.textContent = "…";
+    s.disabled = true;
+    mailAendern(KONTEN.aktiv, "verschieben", "", false, s.value).then(function () { s.disabled = false; });
+  });
+  $("lesen").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-was]"); if (!b || KONTEN.aktiv === null) return;
+    [].forEach.call(this.querySelectorAll(".werkzeuge button"), function (x) { x.disabled = true; });
+    var meldung = this.querySelector(".werkzeug-meldung"); if (meldung) meldung.textContent = "…";
+    var leiste = this;
+    mailAendern(KONTEN.aktiv, b.dataset.was, b.dataset.nach).then(function (ok) {
+      [].forEach.call(leiste.querySelectorAll(".werkzeuge button"), function (x) { x.disabled = false; });
+      if (ok && b.dataset.was === "verschieben") return;
+    });
+  });
+  // Beim ersten Öffnen der Mail-Ansicht den Posteingang mit Nachlade-Möglichkeit holen
+  document.addEventListener("click", function (e) {
+    var z = e.target.closest('[data-ziel="mail"]');
+    if (z && !KONTEN.ansicht && KONTEN.liste.length) ordnerLaden(true);
+    if (z && !KONTEN.eigene && KONTEN.liste.length) eigeneOrdnerLaden();
   });
   $("mails-lang").addEventListener("click", function (e) { var li = e.target.closest("[data-mail]"); if (li) mailOeffnen(+li.dataset.mail); });
   $("mails-kurz").addEventListener("click", function (e) {
