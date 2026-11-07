@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Übersicht · ARTLENN MEDIA</title>
+<link rel="icon" href="assets/img/favicon-64.png">
+<style>
+:root{
+  --glas: rgba(44,46,50,.5);
+  --glas-stark: rgba(40,42,46,.6);
+  --glas-hell: rgba(255,255,255,.1);
+  --rand: rgba(255,255,255,.16);
+  --rand-hell: rgba(255,255,255,.3);
+  --blau: #3B82F6;
+  --blau-hell: #7DB2FF;
+  --schrift: #F4F5F6;
+  --schrift-2: rgba(244,245,246,.72);
+  --schrift-3: rgba(244,245,246,.55);
+  --petrol: #7FCAC7;
+  --petrol-voll: #33A4A5;
+  --pink: #FA7C92;
+  --orange: #FE7F44;
+  --gelb: #FAD156;
+  --gruen: #A3CC91;
+  --blur: blur(34px) saturate(160%);
+  --radius: 26px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif;
+  color:var(--schrift);background:#14171b;font-size:15px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+/* Hintergrund: Platzhalter für ein echtes Foto (helles Wohnzimmer mit großem Fenster) */
+.hintergrund{position:fixed;inset:0;z-index:-1;overflow:hidden;background:linear-gradient(180deg,#b9b4ab 0%,#a19a8f 48%,#6f665b 70%,#4a433b 100%)}
+.hintergrund .fenster{position:absolute;left:4%;right:4%;top:-4%;height:62%;
+  background:
+    linear-gradient(90deg,transparent 0 24.4%,#6b655d 24.4% 25.2%,transparent 25.2% 49.6%,#6b655d 49.6% 50.4%,transparent 50.4% 74.8%,#6b655d 74.8% 75.6%,transparent 75.6%),
+    linear-gradient(180deg,#f4f6f7 0%,#e3e8ea 55%,#c9d0cc 80%,#9aa392 100%);
+  filter:blur(6px)}
+.hintergrund .boden{position:absolute;left:0;right:0;bottom:0;height:34%;background:linear-gradient(180deg,#8a7a68,#5c5045);filter:blur(4px)}
+.hintergrund .sofa{position:absolute;left:-4%;bottom:6%;width:46%;height:30%;border-radius:40px 40px 18px 18px;background:linear-gradient(180deg,#d8d2c7,#a99f91);filter:blur(10px)}
+.hintergrund .sofa2{position:absolute;right:-6%;bottom:4%;width:30%;height:26%;border-radius:40px;background:linear-gradient(180deg,#cfc7ba,#9b9182);filter:blur(10px)}
+.hintergrund .pflanze{position:absolute;left:2%;top:34%;width:12%;height:34%;border-radius:50%;background:radial-gradient(circle,#4f6a3e 0%,#3a5230 55%,transparent 72%);filter:blur(8px)}
+.hintergrund .lampe{position:absolute;right:16%;top:38%;width:8%;height:10%;border-radius:50%;background:radial-gradient(circle,#ffe7c2,transparent 70%);filter:blur(8px)}
+.hintergrund::after{content:"";position:absolute;inset:0;background:rgba(18,20,24,.18)}
+
+.glas{background:var(--glas);border:1px solid var(--rand);border-radius:var(--radius);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1px rgba(255,255,255,.02), 0 24px 60px -24px rgba(0,0,0,.5)}
+
+.rahmen{display:grid;grid-template-columns:56px 1fr;gap:22px;padding:22px 28px 28px 18px;min-height:100vh;max-width:1560px;margin:0 auto}
+
+/* Leiste links: schwebende Pille, senkrecht mittig */
+.leiste{position:sticky;top:50vh;transform:translateY(-50%);align-self:start;margin-top:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;border-radius:999px}
+.leiste img{width:34px;height:34px;border-radius:50%;margin:2px 0 6px}
+.leiste button{width:40px;height:40px;border-radius:50%;border:0;background:transparent;color:var(--schrift-2);cursor:pointer;display:grid;place-items:center;transition:background .2s,color .2s}
+.leiste button:hover{background:var(--glas-hell);color:var(--schrift)}
+.leiste button[aria-current="true"]{background:rgba(255,255,255,.9);color:#1d2024}
+.leiste .unten{margin-top:6px}
+svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* Kopf: Begrüßung links, Reiter als Pille in der Mitte, Suche rechts */
+.kopf{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin-bottom:22px}
+.kopf .links{font-size:13px;color:var(--schrift-2)}
+.kopf .rechts{display:flex;justify-content:flex-end;align-items:center;gap:10px}
+.reiter{display:flex;gap:4px;padding:5px;border-radius:999px;overflow-x:auto;scrollbar-width:none}
+.reiter button{border:0;background:transparent;color:var(--schrift-2);font:inherit;font-size:13.5px;padding:8px 16px;border-radius:999px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:background .2s,color .2s}
+.reiter button svg.i{width:16px;height:16px}
+.reiter button:hover{color:var(--schrift)}
+.reiter button[aria-selected="true"]{background:rgba(255,255,255,.18);color:var(--schrift)}
+.rund{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--schrift-2);border:1px solid var(--rand);cursor:pointer}
+.suche{display:flex;align-items:center;gap:8px;background:var(--glas);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--rand);border-radius:999px;padding:9px 14px;color:var(--schrift-3);min-width:200px}
+.suche input{background:transparent;border:0;color:var(--schrift);font:inherit;font-size:14px;outline:none;width:100%}
+.suche input::placeholder{color:var(--schrift-3)}
+.person{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--petrol-voll),#2D7F81);display:grid;place-items:center;font-weight:600;font-size:14px;flex:none}
+
+.gruss h1{font-size:24px;font-weight:600;letter-spacing:-.02em;text-shadow:0 1px 12px rgba(0,0,0,.25)}
+.gruss p{color:var(--schrift-2);margin-top:1px;font-size:13.5px;text-shadow:0 1px 10px rgba(0,0,0,.3)}
+.hinweis{font-size:12.5px;color:var(--schrift-3);border:1px solid var(--rand);border-radius:10px;padding:6px 10px}
+
+/* Raster */
+.raster{display:grid;grid-template-columns:repeat(12,1fr);gap:18px}
+.k{padding:20px}
+.k h2{font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.k h2 a,.mehr{font-size:13px;font-weight:500;color:var(--schrift-3);text-decoration:none}
+.k h2 a:hover{color:var(--schrift)}
+.s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+
+.zahl{transition:transform .25s cubic-bezier(.2,.8,.2,1),background .25s}
+.zahl:hover{transform:translateY(-4px);background:rgba(34,38,44,.5)}
+.zahl .oben{display:flex;justify-content:space-between;align-items:flex-start;color:var(--schrift-2);font-size:13.5px}
+.zahl .sym{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(74,222,128,.16);color:#86efac;border:1px solid rgba(134,239,172,.25)}
+.zahl .sym.b{background:rgba(59,130,246,.18);color:var(--blau-hell);border-color:rgba(125,178,255,.3)}
+.zahl .sym.o{background:rgba(254,127,68,.16);color:#ffb08a;border-color:rgba(255,176,138,.28)}
+.zahl .sym.p{background:rgba(250,124,146,.16);color:#ffb3c0;border-color:rgba(255,179,192,.28)}
+.zahl .wert{font-size:30px;font-weight:600;letter-spacing:-.02em;margin:14px 0 4px;font-variant-numeric:tabular-nums}
+.zahl .oben .klein{display:block;font-size:11.5px;color:var(--schrift-3);margin-top:1px}
+.zahl .unter{font-size:13px;color:var(--schrift-3)}
+.zahl .fuss{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.zahl svg.linie{width:92px;height:34px;flex:none;overflow:visible}
+.zahl svg.linie path{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.plus{color:var(--gruen)}.minus{color:var(--pink)}
+
+/* Diagramm */
+.diagramm{display:flex;align-items:flex-end;gap:14px;height:290px;padding-top:30px}
+.saeule{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;height:100%;justify-content:flex-end}
+.saeule span.b{width:100%;max-width:40px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,.18) 60%,rgba(255,255,255,.06) 100%);border:1px solid rgba(255,255,255,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.6);position:relative;transition:filter .2s}
+.saeule:hover span.b{filter:brightness(1.25)}
+.saeule.jetzt span.b{background:linear-gradient(180deg,#8fbcff 0%,var(--blau) 55%,#1d5fd6 100%);border-color:rgba(143,188,255,.8);box-shadow:0 0 36px -2px rgba(59,130,246,.75),inset 0 1px 0 rgba(255,255,255,.6)}
+.saeule small{font-size:12px;color:var(--schrift-3)}
+.saeule span.b em{position:absolute;top:-26px;left:50%;transform:translateX(-50%);font-style:normal;font-size:12px;color:var(--schrift);background:var(--glas-stark);border:1px solid var(--rand);padding:2px 7px;border-radius:7px;white-space:nowrap;opacity:0;transition:opacity .2s}
+.saeule:hover span.b em,.saeule.jetzt span.b em{opacity:1}
+.diagramm-kopf{display:flex;gap:28px;margin-bottom:6px}
+.diagramm-kopf div{font-size:13px;color:var(--schrift-3)}
+.diagramm-kopf b{display:block;font-size:20px;color:var(--schrift);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* Listen */
+.liste{list-style:none;display:flex;flex-direction:column}
+.liste li{display:flex;gap:12px;align-items:center;padding:10px 8px;border-radius:12px;transition:background .2s;cursor:pointer}
+.liste li:hover{background:var(--glas-hell)}
+.liste li+li{border-top:1px solid rgba(255,255,255,.06)}
+.liste .t{flex:1;min-width:0}
+.liste .t b{display:block;font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.liste .t small{display:block;color:var(--schrift-3);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.liste .r{font-size:13px;color:var(--schrift-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.punkt{width:8px;height:8px;border-radius:50%;flex:none}
+.zeit{width:52px;flex:none;font-size:13px;color:var(--schrift-2);font-variant-numeric:tabular-nums}
+.strich{width:3px;align-self:stretch;border-radius:3px;flex:none}
+.quelle{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:600;background:var(--glas-hell);border:1px solid var(--rand)}
+.stand{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--rand)}
+.stand.offen{color:var(--gelb);border-color:rgba(250,209,86,.35)}
+.stand.bezahlt{color:var(--gruen);border-color:rgba(163,204,145,.35)}
+.stand.ueber{color:var(--pink);border-color:rgba(250,124,146,.4)}
+
+/* Mail-Ansicht */
+.ansicht[hidden]{display:none}
+.mail{display:grid;grid-template-columns:330px 1fr;gap:18px;height:calc(100vh - 130px);min-height:520px}
+.mail .spalte{padding:16px;display:flex;flex-direction:column;min-height:0}
+.konten{display:flex;gap:6px;margin-bottom:12px}
+.konten button{flex:1;border:1px solid var(--rand);background:transparent;color:var(--schrift-2);font:inherit;font-size:13px;padding:7px;border-radius:10px;cursor:pointer}
+.konten button[aria-pressed="true"]{background:rgba(255,255,255,.14);color:var(--schrift)}
+.mails{overflow:auto;flex:1}
+.mails li{align-items:flex-start}
+.mails li[aria-current="true"]{background:rgba(255,255,255,.12)}
+.mails .neu b::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--petrol);margin-right:7px;vertical-align:1px}
+.lesen{padding:26px 30px;overflow:auto}
+.lesen .kopfzeile{display:flex;gap:14px;align-items:center;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:20px}
+.lesen h3{font-size:21px;font-weight:600;letter-spacing:-.01em;margin-bottom:16px}
+.lesen p{color:var(--schrift-2);max-width:64ch;margin-bottom:12px}
+.antwort{margin-top:26px;display:flex;gap:10px;align-items:center;background:var(--glas-hell);border:1px solid var(--rand);border-radius:14px;padding:10px 10px 10px 16px}
+.antwort input{flex:1;background:transparent;border:0;color:var(--schrift);font:inherit;outline:none}
+.antwort input::placeholder{color:var(--schrift-3)}
+.knopf{border:0;background:var(--schrift);color:#16191d;font:inherit;font-weight:600;font-size:14px;padding:9px 16px;border-radius:10px;cursor:pointer}
+
+.liste li.leer{color:var(--schrift-3);font-size:13.5px;cursor:default}
+.liste li.leer:hover{background:transparent}
+.liste a{color:inherit;text-decoration:none;display:contents}
+.lesen .text{white-space:pre-wrap;color:var(--schrift-2);max-width:72ch;overflow-wrap:anywhere}
+.lesen .anh{margin-top:16px;font-size:13px;color:var(--schrift-3)}
+.knopf.link{display:inline-block;text-decoration:none;margin-top:22px}
+.mails .wenig{color:var(--schrift-3)}
+.kalender{padding:24px 28px}
+.kalender h3{font-size:14px;font-weight:600;color:var(--schrift-2);margin:20px 0 6px;text-transform:none}
+.kalender h3:first-child{margin-top:0}
+.aktien{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.aktie{background:var(--glas-hell);border:1px solid var(--rand);border-radius:16px;padding:14px 14px 10px;display:flex;flex-direction:column;gap:2px;min-width:0;transition:background .2s,transform .25s cubic-bezier(.2,.8,.2,1)}
+.aktie:hover{background:rgba(255,255,255,.14);transform:translateY(-2px)}
+.aktie .n{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aktie .s{font-size:11.5px;color:var(--schrift-3)}
+.aktie .k{font-size:19px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;margin-top:6px;padding:0}
+.aktie .a{font-size:12.5px;font-variant-numeric:tabular-nums}
+.aktie svg{width:100%;height:30px;margin-top:6px;overflow:visible}
+.aktie svg path{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.leer-text{color:var(--schrift-3);font-size:13.5px}
+.ticker .wechselbar{transition:opacity .22s cubic-bezier(.2,.8,.2,1),transform .22s cubic-bezier(.2,.8,.2,1)}
+.ticker.aus .wechselbar{opacity:0;transform:translateY(5px)}
+.punkte{display:flex;gap:4px;margin-top:12px;align-items:center}
+.punkte button{width:6px;height:6px;border-radius:3px;border:0;padding:0;background:rgba(255,255,255,.25);cursor:pointer;transition:width .25s cubic-bezier(.2,.8,.2,1),background .25s}
+.punkte button:hover{background:rgba(255,255,255,.5)}
+.punkte button[aria-current="true"]{background:rgba(255,255,255,.85);width:16px}
+.mailkarte .liste li{padding:9px 8px}
+.schlagzeilen{display:flex;flex-direction:column}
+.schlagzeilen .wechselbar{transition:opacity .22s cubic-bezier(.2,.8,.2,1),transform .22s cubic-bezier(.2,.8,.2,1)}
+.schlagzeilen.aus .wechselbar{opacity:0;transform:translateY(5px)}
+.sz{flex:1;display:flex;flex-direction:column;gap:10px;color:inherit;text-decoration:none;border-radius:12px;padding:4px 2px}
+.sz:hover .sz-titel{text-decoration:underline;text-decoration-color:rgba(255,255,255,.35);text-underline-offset:3px}
+.sz-kopf{font-size:12.5px;color:var(--schrift-3);letter-spacing:.02em}
+.sz-kopf b{color:var(--schrift-2);font-weight:600}
+.sz-titel{font-size:18px;font-weight:600;line-height:1.35;letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.sz{flex:0 0 auto}
+.sz-danach{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);flex:1}
+.sz-label{display:block;font-size:11.5px;color:var(--schrift-3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+.sz-danach ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.sz-danach li{display:flex;gap:10px;align-items:flex-start;cursor:pointer;border-radius:10px;padding:6px;margin:0 -6px;transition:background .2s}
+.sz-danach li:hover{background:var(--glas-hell)}
+.sz-danach .q{flex:none;width:86px;white-space:nowrap;font-size:11px;font-weight:600;color:var(--schrift-2);margin-top:1px}
+.sz-danach .t{font-size:13px;color:var(--schrift-2);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sz-fuss{display:flex;align-items:center;gap:12px;margin-top:12px}
+.sz-fuss .punkte{margin-top:0;padding-top:0}
+.sz-fortschritt{flex:1;height:2px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.sz-fortschritt i{display:block;height:100%;width:100%;background:rgba(255,255,255,.55);transform-origin:left;transform:scaleX(0)}
+.sz-fortschritt i.lauf{animation:szlauf 7s linear forwards}
+.schlagzeilen.halt .sz-fortschritt i.lauf{animation-play-state:paused}
+@keyframes szlauf{to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.sz-fortschritt{display:none}}
+.wochekarte{display:flex;flex-direction:column}
+.woche{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));flex:1}
+.tag{padding:2px 8px 6px;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:180px;border-left:1px solid rgba(255,255,255,.09)}
+.tag:first-child{border-left:0;padding-left:0}
+.tag .tk{display:flex;flex-direction:column;align-items:flex-start;gap:4px;font-size:11.5px;color:var(--schrift-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.tag .tk b{font-size:20px;color:var(--schrift);font-weight:600;letter-spacing:-.01em;text-transform:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;margin-left:-6px}
+.tag.heute .tk{color:var(--blau-hell)}
+.tag.heute .tk b{background:var(--blau);color:#fff}
+.tag.wochenende .tk b{color:var(--schrift-2)}
+.termin{--f:#7DB2FF;font-size:12px;line-height:1.3;padding:5px 7px;border-radius:8px;min-width:0;background:color-mix(in srgb,var(--f) 22%,transparent);box-shadow:inset 2px 0 0 var(--f)}
+.termin small{display:block;color:var(--schrift-2);font-size:11px;font-variant-numeric:tabular-nums}
+.termin span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:anywhere}
+.tag .weitere{font-size:11px;color:var(--schrift-3);padding-left:7px}
+.tag .frei{font-size:11.5px;color:var(--schrift-3);margin:auto 0;text-align:center;opacity:.7}
+@media (max-width:1100px){.woche{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:760px){.woche{grid-template-columns:1fr}.tag{min-height:0;border-left:0;padding:10px 0;border-top:1px solid rgba(255,255,255,.09)}.tag:first-child{border-top:0}}
+.profilbild{object-fit:cover;padding:0;border:1.5px solid rgba(255,255,255,.35)}
+.platz{padding:60px 30px;text-align:center;color:var(--schrift-2)}
+
+:focus-visible{outline:2px solid var(--petrol);outline-offset:2px}
+
+@media (max-width:1200px){.s3{grid-column:span 6}.s4,.s5,.s7,.s8{grid-column:span 12}}
+@media (max-width:760px){
+  .rahmen{grid-template-columns:1fr;padding:12px;gap:12px}
+  .leiste{position:fixed;top:auto;transform:none;bottom:12px;left:12px;right:12px;height:auto;flex-direction:row;justify-content:space-around;padding:6px;z-index:5}
+  .leiste img,.leiste .unten{display:none}
+  .suche{display:none}
+  .kopf{grid-template-columns:1fr auto}
+  .kopf .reiter{grid-column:1/-1;grid-row:2}
+  .raster{gap:12px}
+  .s3{grid-column:span 12}
+  .gruss h1{font-size:24px}
+  .hinweis{display:none}
+  .mail{grid-template-columns:1fr;height:auto}
+  .lesen{display:none}
+  main{padding-bottom:84px}
+  .diagramm{gap:6px}
+  :root{--blur:blur(18px) saturate(140%)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="hintergrund" aria-hidden="true"><div class="fenster"></div><div class="boden"></div><div class="pflanze"></div><div class="lampe"></div><div class="sofa"></div><div class="sofa2"></div></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-start" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></symbol>
+  <symbol id="i-kal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-news" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h10M7 17h6"/></symbol>
+  <symbol id="i-orbit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-20 12 12)"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 18.5V6a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H8z"/></symbol>
+  <symbol id="i-set" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></symbol>
+  <symbol id="i-euro" viewBox="0 0 24 24"><path d="M17 6.5A7 7 0 1 0 17 17.5M4 10h9M4 14h9"/></symbol>
+  <symbol id="i-beleg" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-raus" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></symbol>
+  <symbol id="i-auge" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-kurs" viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></symbol>
+  <symbol id="i-insta" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></symbol>
+  <symbol id="i-such" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+</svg>
+
+<div class="rahmen">
+  <nav class="leiste glas" aria-label="Hauptnavigation">
+    <button aria-current="true" data-ziel="start" aria-label="Übersicht"><svg class="i"><use href="#i-start"/></svg></button>
+    <button data-ziel="mail" aria-label="E-Mails"><svg class="i"><use href="#i-mail"/></svg></button>
+    <button data-ziel="kalender" aria-label="Kalender"><svg class="i"><use href="#i-kal"/></svg></button>
+    <button data-ziel="nachrichten" aria-label="Nachrichten"><svg class="i"><use href="#i-news"/></svg></button>
+    <button data-ziel="orbit" aria-label="MeinOrbit"><svg class="i"><use href="#i-orbit"/></svg></button>
+    <button data-ziel="whatsapp" aria-label="WhatsApp öffnen"><svg class="i"><use href="#i-chat"/></svg></button>
+    <button class="unten" id="abmelden" aria-label="Abmelden" title="Abmelden"><svg class="i"><use href="#i-raus"/></svg></button>
+  </nav>
+
+  <main>
+    <header class="kopf">
+      <div class="gruss"><div><h1 id="gruss">Guten Abend, Lennart</h1><p id="datum"></p></div></div>
+      <div class="reiter glas" role="tablist">
+        <button role="tab" aria-selected="true" data-ziel="start"><svg class="i"><use href="#i-start"/></svg>Übersicht</button>
+        <button role="tab" data-ziel="mail"><svg class="i"><use href="#i-mail"/></svg>E-Mails</button>
+        <button role="tab" data-ziel="kalender"><svg class="i"><use href="#i-kal"/></svg>Kalender</button>
+        <button role="tab" data-ziel="nachrichten"><svg class="i"><use href="#i-news"/></svg>Nachrichten</button>
+        <button role="tab" data-ziel="orbit"><svg class="i"><use href="#i-orbit"/></svg>MeinOrbit</button>
+      </div>
+      <div class="rechts">
+        <label class="suche"><svg class="i" style="width:17px;height:17px"><use href="#i-such"/></svg><input placeholder="Suchen" aria-label="Suchen"></label>
+        <img class="person profilbild" src="assets/img/profil.jpg" alt="Lennart" width="38" height="38">
+      </div>
+    </header>
+
+    <!-- ÜBERSICHT -->
+    <section class="ansicht" data-ansicht="start">
+
+      <div class="raster">
+        <article class="k glas zahl s3">
+          <div class="oben"><span>Umsatz <span id="z-monat">diesen Monat</span></span><span class="sym"><svg class="i"><use href="#i-euro"/></svg></span></div>
+          <div class="fuss"><div><div class="wert" id="z-umsatz">–</div><div class="unter" id="z-umsatz-u">wird geladen</div></div>
+          <svg class="linie" viewBox="0 0 92 34"><path id="l-umsatz" d="" stroke="#86efac"/></svg></div>
+        </article>
+        <article class="k glas zahl s3">
+          <div class="oben"><span>Aufrufe heute <span class="klein">Bad Salzuflen News</span></span><span class="sym b"><svg class="i"><use href="#i-auge"/></svg></span></div>
+          <div class="fuss"><div><div class="wert" id="z-aufrufe">–</div><div class="unter" id="z-aufrufe-u">wird geladen</div></div>
+          <svg class="linie" viewBox="0 0 92 34"><path id="l-aufrufe" d="" stroke="#7DB2FF"/></svg></div>
+        </article>
+        <article class="k glas zahl s3 ticker" id="ticker">
+          <div class="oben wechselbar"><span><span id="t-name">Aktien</span> <span class="klein" id="t-symbol">etwa 15 Min. verzögert</span></span><span class="sym o"><svg class="i"><use href="#i-kurs"/></svg></span></div>
+          <div class="fuss wechselbar"><div><div class="wert" id="t-kurs">–</div><div class="unter" id="t-aend">wird geladen</div></div>
+          <svg class="linie" viewBox="0 0 92 34"><path id="l-ticker" d="" stroke="#ffb08a"/></svg></div>
+          <div class="punkte" id="t-punkte" aria-label="Aktie auswählen"></div>
+        </article>
+        <article class="k glas zahl s3">
+          <div class="oben"><span>Instagram <span class="klein" id="ig-name">@badsalzuflennews.de</span></span><span class="sym p"><svg class="i"><use href="#i-insta"/></svg></span></div>
+          <div class="fuss"><div><div class="wert" id="z-ig">–</div><div class="unter" id="z-ig-u">wird geladen</div></div>
+          <svg class="linie" viewBox="0 0 92 34"><path id="l-ig" d="" stroke="#ffb3c0"/></svg></div>
+        </article>
+
+        <article class="k glas s8 mailkarte">
+          <h2>E-Mails <a href="#" data-ziel="mail" id="mail-zahl">Alle ansehen</a></h2>
+          <ul class="liste" id="mails-kurz"><li class="leer">wird geladen</li></ul>
+        </article>
+
+        <article class="k glas s4 schlagzeilen" id="sz-karte">
+          <h2>Schlagzeilen <span class="mehr">BILD · NIUS · Lemgo Radio</span></h2>
+          <a class="sz wechselbar" id="sz-link" href="#" target="_blank" rel="noopener">
+            <span class="sz-kopf" id="sz-kopf">wird geladen</span>
+            <span class="sz-titel" id="sz-titel"></span>
+          </a>
+          <div class="sz-danach">
+            <ul id="sz-danach" aria-label="Nächste Schlagzeilen"></ul>
+          </div>
+          <div class="sz-fuss">
+            <div class="punkte" id="sz-punkte" aria-label="Schlagzeile auswählen"></div>
+            <div class="sz-fortschritt" aria-hidden="true"><i id="sz-balken"></i></div>
+          </div>
+        </article>
+
+        <article class="k glas s8 wochekarte">
+          <h2>Diese Woche <a href="#" data-ziel="kalender">Kalender</a></h2>
+          <div class="woche" id="woche"><p class="leer-text">wird geladen</p></div>
+        </article>
+
+        <article class="k glas s4">
+          <h2>Erinnerungen <span class="mehr" id="erin-stand">iCloud</span></h2>
+          <ul class="liste" id="l-erin"><li class="leer">wird geladen</li></ul>
+        </article>
+
+        <article class="k glas s5">
+          <h2>Umsatz der letzten 12 Monate <a href="orbit.html">MeinOrbit öffnen</a></h2>
+          <div class="diagramm-kopf">
+            <div>Dieses Jahr<b id="d-jahr">–</b></div>
+            <div>Monatsschnitt<b id="d-schnitt">–</b></div>
+            <div>Bester Monat<b id="d-best">–</b></div>
+          </div>
+          <div class="diagramm" id="diagramm" role="img" aria-label="Säulendiagramm Umsatz je Monat"></div>
+        </article>
+
+        <article class="k glas s7">
+          <h2>Letzte Rechnungen <a href="orbit.html#rechnungen">MeinOrbit</a></h2>
+          <ul class="liste" id="l-rechnungen"><li class="leer">wird geladen</li></ul>
+        </article>
+
+        <article class="k glas s12">
+          <h2>Aktien <span class="mehr" id="aktien-stand">etwa 15 Min. verzögert</span></h2>
+          <div class="aktien" id="l-aktien"><p class="leer-text">wird geladen</p></div>
+        </article>
+
+        <article class="k glas s5">
+          <h2>Bad Salzuflen <a href="https://badsalzuflennews.de" target="_blank" rel="noopener">badsalzuflennews.de</a></h2>
+          <ul class="liste" id="l-bs"><li class="leer">wird geladen</li></ul>
+        </article>
+
+        <article class="k glas s7">
+          <h2>Welt <a href="https://www.tagesschau.de" target="_blank" rel="noopener">tagesschau.de</a></h2>
+          <ul class="liste" id="l-welt"><li class="leer">wird geladen</li></ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- E-MAILS -->
+    <section class="ansicht" data-ansicht="mail" hidden>
+      <div class="mail">
+        <div class="spalte glas">
+          <div class="konten" id="konten-knoepfe"></div>
+          <ul class="liste mails" id="mails-lang"></ul>
+        </div>
+        <div class="lesen glas" id="lesen"></div>
+      </div>
+    </section>
+
+    <section class="ansicht" data-ansicht="kalender" hidden>
+      <div class="glas k kalender" id="kal-liste"><p class="platz">wird geladen</p></div>
+    </section>
+
+    <section class="ansicht" data-ansicht="leer" hidden>
+      <div class="glas platz" id="platz"></div>
+    </section>
+  </main>
+</div>
+
+<script src="assets/js/vendor/supabase.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<script>
+(function(){
+  var texte={nachrichten:"Hier erscheinen später alle Meldungen aus Bad Salzuflen und der Welt auf einer Seite."};
+  function wechseln(ziel){
+    if(ziel==="orbit"){location.href="orbit.html";return}
+    if(ziel==="whatsapp"){window.open("https://web.whatsapp.com","_blank","noopener");return}
+    var welche=(ziel==="start"||ziel==="mail"||ziel==="kalender")?ziel:"leer";
+    document.querySelectorAll(".ansicht").forEach(function(a){a.hidden=a.dataset.ansicht!==welche});
+    if(welche==="leer")document.getElementById("platz").textContent=texte[ziel]||"";
+    document.querySelectorAll(".reiter button").forEach(function(b){b.setAttribute("aria-selected",b.dataset.ziel===ziel)});
+    document.querySelectorAll(".leiste button[data-ziel]").forEach(function(b){b.setAttribute("aria-current",b.dataset.ziel===ziel)});
+    window.scrollTo(0,0);
+  }
+  document.addEventListener("click",function(e){
+    var z=e.target.closest("[data-ziel]");
+    if(z){e.preventDefault();wechseln(z.dataset.ziel)}
+  });
+  var h=new Date().getHours();
+  document.getElementById("gruss").textContent=(h<11?"Guten Morgen":h<18?"Guten Tag":"Guten Abend")+", Lennart";
+  document.getElementById("datum").textContent=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+})();
+</script>
+<script src="assets/js/dashboard.js?v=20261107r"></script>
+</body>
+</html>

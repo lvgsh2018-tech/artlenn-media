@@ -53,13 +53,13 @@
   (function () {
     var f = document.getElementById('form'), m = document.getElementById('meldung'), los = document.getElementById('los');
     if (AMD.modus === 'beispiel') document.getElementById('beispiel').hidden = false;
-    AMD.sitzung().then(function (u) { if (u) location.replace('orbit.html'); });
+    AMD.sitzung().then(function (u) { if (u) location.replace('dashboard.html'); });
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       var email = f.email.value.trim(), pw = f.pw.value;
       if (AMD.modus === 'echt' && (!email || !pw)) { m.textContent = 'Bitte E-Mail und Passwort eingeben.'; return; }
       m.textContent = ''; los.disabled = true; los.textContent = 'Einen Moment …';
-      AMD.anmelden(email, pw).then(function () { location.replace('orbit.html'); })
+      AMD.anmelden(email, pw).then(function () { location.replace('dashboard.html'); })
         .catch(function (err) { m.textContent = err.message; los.disabled = false; los.textContent = 'Anmelden'; });
     });
   })();
