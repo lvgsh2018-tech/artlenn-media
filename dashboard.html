@@ -174,7 +174,9 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 .kalender{padding:24px 28px}
 .kalender h3{font-size:14px;font-weight:600;color:var(--schrift-2);margin:20px 0 6px;text-transform:none}
 .kalender h3:first-child{margin-top:0}
-.aktien{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.aktien{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.aktien{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){.aktien{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .aktie{background:var(--glas-hell);border:1px solid var(--rand);border-radius:16px;padding:14px 14px 10px;display:flex;flex-direction:column;gap:2px;min-width:0;transition:background .2s,transform .25s cubic-bezier(.2,.8,.2,1)}
 .aktie:hover{background:rgba(255,255,255,.14);transform:translateY(-2px)}
 .aktie .n{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -459,6 +461,6 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   document.getElementById("datum").textContent=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 })();
 </script>
-<script src="assets/js/dashboard.js?v=20261107s"></script>
+<script src="assets/js/dashboard.js?v=20261108a"></script>
 </body>
 </html>

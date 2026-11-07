@@ -491,6 +491,8 @@
   function zahlDE(n, stellen) { return n.toLocaleString("de-DE", { minimumFractionDigits: stellen, maximumFractionDigits: stellen }); }
 
   function aktienZeigen(liste) {
+    // Die Reihe unten zeigt nur Aktien; Bitcoin läuft nur im Wechsel oben mit
+    liste = (liste || []).filter(function (a) { return a.symbol !== "BTC-EUR"; });
     if (!liste || !liste.length) { $("l-aktien").innerHTML = '<p class="leer-text">Keine Kurse.</p>'; return; }
     $("l-aktien").innerHTML = liste.map(function (a) {
       if (a.fehler || a.kurs == null) return '<div class="aktie"><span class="n">' + esc(a.symbol) + '</span><span class="s">nicht erreichbar</span></div>';
