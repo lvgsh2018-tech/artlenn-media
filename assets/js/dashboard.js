@@ -331,7 +331,16 @@
       m.neu = false; mailAendern(i, "gelesen", "", true);
       [].forEach.call(document.querySelectorAll('[data-mail="' + i + '"]'), function (li) { li.classList.remove("neu"); });
     }
-    var fuss = (d.anhaenge && d.anhaenge.length ? '<p class="anh">Anhänge: ' + esc(d.anhaenge.join(", ")) + "</p>" : "") +
+    var bilderHtml = (d.bilder || []).map(function (b) {
+      return '<figure class="anh-bild"><img src="' + esc(b.src) + '" alt="' + esc(b.name) + '" loading="lazy"><figcaption><span>' + esc(b.name) +
+        '</span><a href="' + esc(b.src) + '" download="' + esc(b.name) + '">Speichern</a></figcaption></figure>';
+    }).join("");
+    var fuss = (bilderHtml ? '<div class="anh-bilder">' + bilderHtml + "</div>" : "") +
+      (function () {
+        var gezeigt = (d.bilder || []).map(function (b) { return b.name; });
+        var rest = (d.anhaenge || []).filter(function (n) { var i = gezeigt.indexOf(n); if (i < 0) return true; gezeigt.splice(i, 1); return false; });
+        return rest.length ? '<p class="anh">Anhänge: ' + esc(rest.join(", ")) + "</p>" : "";
+      })() +
       '<a class="knopf link" href="' + esc(oeffnen) + '" target="_blank" rel="noopener">In ' + esc(konto.art === "gmail" ? "Gmail" : "iCloud Mail") + " antworten</a>";
     if (!d.html) {
       $("lesen").innerHTML = kopfHtml + '<div class="text">' + esc(d.text || "(kein Text)") + "</div>" + fuss;
