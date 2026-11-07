@@ -2,10 +2,18 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Übersicht · ARTLENN MEDIA</title>
 <link rel="icon" href="assets/img/favicon-64.png">
+<!-- iPad/iPhone: als App auf dem Home-Bildschirm ohne schwarze Leiste oben;
+     das Hintergrundbild reicht bis unter Uhrzeit und Akku -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dashboard">
+<meta name="theme-color" content="#77736d">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <style>
 :root{
   --glas: rgba(44,46,50,.5);
@@ -262,6 +270,12 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   :root{--blur:blur(18px) saturate(140%)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* Abstand oben für Uhrzeit und Akku, wenn das Dashboard als App vom Home-Bildschirm läuft */
+@supports (padding-top:env(safe-area-inset-top)){
+  .rahmen{padding-top:calc(22px + env(safe-area-inset-top))}
+  @media (max-width:1300px){.rahmen{padding-top:calc(18px + env(safe-area-inset-top))}}
+  @media (max-width:760px){.rahmen{padding-top:calc(12px + env(safe-area-inset-top))}}
+}
 </style>
 </head>
 <body>
