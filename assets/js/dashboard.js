@@ -227,6 +227,7 @@
     var summe = 0;
     Object.keys(d.ungelesen || {}).forEach(function (k) { summe += d.ungelesen[k]; });
     $("mail-zahl").textContent = summe ? summe + " ungelesen" : "Alle ansehen";
+    KONTEN.ungelesen = summe;
     var fehlerText = (d.fehler || []).filter(function (f) { return !/^Kalender/.test(f); });
     if (KONTEN.mails.length) $("mails-kurz").innerHTML = KONTEN.mails.slice(0, 4).map(mailZeile).join("");
     else leer("mails-kurz", fehlerText.length ? fehlerText.join(" · ") : "Keine Mails im Posteingang.");
@@ -328,8 +329,11 @@
     if (r.error || !r.data || r.data.fehler) { $("lesen").innerHTML = kopfHtml + '<p class="text">Die Mail ließ sich nicht laden.</p>'; return; }
     var d = r.data;
     if (m.neu) {
-      m.neu = false; mailAendern(i, "gelesen", "", true);
+      mailAendern(i, "gelesen", "", true);
+      zaehler(m, -1);
+      zwillinge(m).forEach(function (x) { x.neu = false; });
       [].forEach.call(document.querySelectorAll('[data-mail="' + i + '"]'), function (li) { li.classList.remove("neu"); });
+      kurzZeigen();
     }
     var bilderHtml = (d.bilder || []).map(function (b) {
       return '<figure class="anh-bild"><img src="' + esc(b.src) + '" alt="' + esc(b.name) + '" loading="lazy"><figcaption><span>' + esc(b.name) +
@@ -369,8 +373,25 @@
     }).join("") + auswahl + '<span class="werkzeug-meldung" aria-live="polite"></span></div>';
   }
 
+  /* Dieselbe Mail steht oft doppelt in KONTEN.mails: einmal aus der Übersicht,
+     einmal aus der Mail-Ansicht. Änderungen gelten für beide. */
+  function zwillinge(m) {
+    var ordner = m.ordner || "INBOX";
+    return KONTEN.mails.filter(function (x) { return x.konto === m.konto && x.uid === m.uid && (x.ordner || "INBOX") === ordner; });
+  }
+  function kurzZeigen() {
+    var kurz = KONTEN.mails.filter(function (x) { return !x.weg && !x.ordner; }).slice(0, 4);
+    $("mails-kurz").innerHTML = kurz.length ? kurz.map(mailZeile).join("") : '<li class="leer">Keine Mails im Posteingang.</li>';
+    if (KONTEN.ungelesen !== undefined) $("mail-zahl").textContent = KONTEN.ungelesen > 0 ? KONTEN.ungelesen + " ungelesen" : "Alle ansehen";
+  }
+  // Zähler „x ungelesen“ vorne: kommt vom Server, hier nur um eins verändern
+  function zaehler(m, um) {
+    if (KONTEN.ungelesen !== undefined && (!m.ordner || m.art === "inbox")) KONTEN.ungelesen = Math.max(0, KONTEN.ungelesen + um);
+  }
+
   function mailWeg(i) {
-    var m = KONTEN.mails[i]; if (m) m.weg = true;
+    var m = KONTEN.mails[i];
+    if (m) { if (m.neu) zaehler(m, -1); zwillinge(m).forEach(function (x) { x.weg = true; }); }
     if (KONTEN.ansicht) {
       var pos = KONTEN.ansicht.indexOf(i);
       if (pos >= 0) KONTEN.ansicht.splice(pos, 1);
@@ -379,9 +400,7 @@
       var naechste = KONTEN.ansicht[pos] !== undefined ? KONTEN.ansicht[pos] : KONTEN.ansicht[pos - 1];
       if (naechste !== undefined) mailOeffnen(naechste);
     } else { KONTEN.aktiv = null; mailListe(); }
-    // Übersicht mitziehen
-    var kurz = KONTEN.mails.filter(function (x) { return !x.weg && !x.ordner; }).slice(0, 4);
-    $("mails-kurz").innerHTML = kurz.length ? kurz.map(mailZeile).join("") : '<li class="leer">Keine Mails im Posteingang.</li>';
+    kurzZeigen(); // Übersicht mitziehen
   }
 
   async function mailAendern(i, was, nach, leise, zielPfad) {
@@ -395,8 +414,10 @@
     if (!ok) { if (meldung) meldung.textContent = "Das hat nicht geklappt."; return false; }
     if (was === "verschieben") mailWeg(i);
     else if (was === "ungelesen") {
-      m.neu = true;
+      if (!m.neu) zaehler(m, 1);
+      zwillinge(m).forEach(function (x) { x.neu = true; });
       [].forEach.call(document.querySelectorAll('[data-mail="' + i + '"]'), function (li) { li.classList.add("neu"); });
+      kurzZeigen();
       if (meldung) meldung.textContent = "Als ungelesen markiert";
     }
     return true;
