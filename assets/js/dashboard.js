@@ -592,6 +592,28 @@
     if (d.verlauf && d.verlauf.length > 1) linie("l-ig", d.verlauf);
   }
 
+  // Fehlergrund aus der Antwort des Abrufs lesen, statt nur „nicht erreichbar“
+  async function grundVon(fehler) {
+    try { var x = await fehler.context.json(); if (x && x.fehler) return x.fehler; } catch (_) { /* kein Text */ }
+    return "nicht erreichbar";
+  }
+
+  async function kommentareLaden() {
+    var r;
+    try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "kommentare" } }); }
+    catch (f) { r = { error: f }; }
+    if (r.error || !r.data) { leer("l-kommentare", "Instagram: " + (r.error ? (await grundVon(r.error)).replace(/^Instagram: /, "") : "nicht erreichbar")); return; }
+    if (r.data.fehlt) { leer("l-kommentare", "Instagram ist noch nicht verbunden."); return; }
+    var liste = (r.data.kommentare || []).slice(0, 6);
+    if (!liste.length) { leer("l-kommentare", "Noch keine Kommentare unter den letzten Beiträgen."); return; }
+    $("l-kommentare").innerHTML = liste.map(function (k) {
+      var bild = /^https:\/\//.test(k.bild) ? '<img class="vorschau" src="' + esc(k.bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '<span class="quelle">IG</span>';
+      var info = ["@" + k.name, k.zeit ? vorWann(k.zeit) : "", k.likes ? k.likes + " ♥" : ""].filter(Boolean).join(" · ");
+      var link = /^https:\/\//.test(k.link) ? k.link : "https://www.instagram.com/badsalzuflennews.de/";
+      return '<li><a href="' + esc(link) + '" target="_blank" rel="noopener" title="' + esc(k.beitrag) + '">' + bild + '<span class="t"><b>' + esc(k.text) + "</b><small>" + esc(info) + "</small></span></a></li>";
+    }).join("");
+  }
+
   /* ---------------- Schlagzeilen BILD / NIUS ----------------
      Eine Schlagzeile nach der anderen, alle 7 Sekunden die nächste; hält an,
      solange die Maus darauf liegt oder der Tab verdeckt ist. */
@@ -846,6 +868,7 @@
     aktienLaden();
     aufrufeLaden();
     instagramLaden();
+    kommentareLaden();
     schlagzeilenLaden();
     orbitLaden().then(orbitZeigen).catch(function (f) {
       console.error(f);

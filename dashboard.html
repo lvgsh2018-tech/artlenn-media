@@ -268,6 +268,9 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 /* Nachrichten-Reiter: Schlagzeilen dürfen umbrechen */
 .nachrichten .liste .t b{white-space:normal;overflow:visible;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .nachrichten .liste li{align-items:flex-start}
+.kommentare .liste li{align-items:flex-start}
+.kommentare .liste .t b{white-space:normal;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kommentare .vorschau{width:34px;height:34px;border-radius:10px;flex:none;object-fit:cover;background:var(--glas-hell);border:1px solid var(--rand)}
 .nachrichten h2 .mehr{font-weight:400}
 .platz{padding:60px 30px;text-align:center;color:var(--schrift-2)}
 
@@ -426,14 +429,9 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
           <ul class="liste" id="l-erin"><li class="leer">wird geladen</li></ul>
         </article>
 
-        <article class="k glas s5">
-          <h2>Umsatz der letzten 12 Monate <a href="orbit.html">MeinOrbit öffnen</a></h2>
-          <div class="diagramm-kopf">
-            <div>Dieses Jahr<b id="d-jahr">–</b></div>
-            <div>Monatsschnitt<b id="d-schnitt">–</b></div>
-            <div>Bester Monat<b id="d-best">–</b></div>
-          </div>
-          <div class="diagramm" id="diagramm" role="img" aria-label="Säulendiagramm Umsatz je Monat"></div>
+        <article class="k glas s5 kommentare">
+          <h2>Neueste Kommentare <a href="https://www.instagram.com/badsalzuflennews.de/" target="_blank" rel="noopener">Instagram</a></h2>
+          <ul class="liste" id="l-kommentare"><li class="leer">wird geladen</li></ul>
         </article>
 
         <article class="k glas s7">
@@ -446,14 +444,24 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
           <div class="aktien" id="l-aktien"><p class="leer-text">wird geladen</p></div>
         </article>
 
-        <article class="k glas s5">
+        <article class="k glas s4">
           <h2>Bad Salzuflen <a href="https://badsalzuflennews.de" target="_blank" rel="noopener">badsalzuflennews.de</a></h2>
           <ul class="liste" id="l-bs"><li class="leer">wird geladen</li></ul>
         </article>
 
-        <article class="k glas s7">
+        <article class="k glas s4">
           <h2>Welt <a href="https://www.tagesschau.de" target="_blank" rel="noopener">tagesschau.de</a></h2>
           <ul class="liste" id="l-welt"><li class="leer">wird geladen</li></ul>
+        </article>
+
+        <article class="k glas s4">
+          <h2>Umsatz der letzten 12 Monate <a href="orbit.html">MeinOrbit öffnen</a></h2>
+          <div class="diagramm-kopf">
+            <div>Dieses Jahr<b id="d-jahr">–</b></div>
+            <div>Monatsschnitt<b id="d-schnitt">–</b></div>
+            <div>Bester Monat<b id="d-best">–</b></div>
+          </div>
+          <div class="diagramm" id="diagramm" role="img" aria-label="Säulendiagramm Umsatz je Monat"></div>
         </article>
       </div>
     </section>
@@ -539,6 +547,6 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   document.getElementById("datum").textContent=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 })();
 </script>
-<script src="assets/js/dashboard.js?v=20261108j"></script>
+<script src="assets/js/dashboard.js?v=20261108l"></script>
 </body>
 </html>
