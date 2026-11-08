@@ -528,12 +528,12 @@
   }
 
   /* ---------------- Reiter Nachrichten ----------------
-     Eine gemeinsame Liste aus Lemgo Radio, Tagesschau, NIUS und BILD (je bis zu 10),
-     die neueste Meldung oben. Lemgo Radio, NIUS und BILD kommen aus demselben Abruf
+     Eine gemeinsame Liste aus Tagesschau, NIUS und BILD (je bis zu 10),
+     die neueste Meldung oben. NIUS und BILD kommen aus demselben Abruf
      wie der Schlagzeilen-Wechsler, die Tagesschau aus welt(). */
   var NACHR = { ts: null, sz: null };
-  var NAME = { "LEMGO RADIO": "Lemgo Radio", TAGESSCHAU: "Tagesschau", NIUS: "NIUS", BILD: "BILD" };
-  var KUERZEL = { "LEMGO RADIO": "LR", TAGESSCHAU: "TS", NIUS: "NI", BILD: "BI" };
+  var NAME = { TAGESSCHAU: "Tagesschau", NIUS: "NIUS", BILD: "BILD" };
+  var KUERZEL = { TAGESSCHAU: "TS", NIUS: "NI", BILD: "BI" };
   function nachrichtenZeigen() {
     if (!$("n-alle") || NACHR.ts === null || NACHR.sz === null) return; // erst wenn beide Abrufe fertig sind
     var liste = NACHR.ts.concat(NACHR.sz).sort(function (a, b) {
@@ -624,9 +624,10 @@
     var r;
     try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "schlagzeilen" } }); }
     catch (f) { r = { error: f }; }
-    var alleSz = (r && r.data && r.data.schlagzeilen) || [];
+    // Lemgo Radio erneuert seine öffentliche Meldungsliste zu selten, deshalb nicht anzeigen
+    var alleSz = ((r && r.data && r.data.schlagzeilen) || []).filter(function (s) { return s.quelle !== "LEMGO RADIO"; });
     NACHR.sz = r.error ? [] : alleSz; nachrichtenZeigen();
-    SZ.liste = alleSz.slice(0, 21); // je Quelle etwa 7
+    SZ.liste = alleSz.slice(0, 14); // je Quelle etwa 7
     if (r.error || !SZ.liste.length) { $("sz-kopf").textContent = "Gerade keine Schlagzeilen erreichbar."; return; }
     $("sz-punkte").innerHTML = SZ.liste.map(function (s, i) {
       return '<button type="button" data-nr="' + i + '" aria-label="Schlagzeile ' + (i + 1) + ' zeigen"></button>';
