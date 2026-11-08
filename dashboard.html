@@ -55,6 +55,10 @@ body{
 .hintergrund .pflanze{position:absolute;left:2%;top:34%;width:12%;height:34%;border-radius:50%;background:radial-gradient(circle,#4f6a3e 0%,#3a5230 55%,transparent 72%);filter:blur(8px)}
 .hintergrund .lampe{position:absolute;right:16%;top:38%;width:8%;height:10%;border-radius:50%;background:radial-gradient(circle,#ffe7c2,transparent 70%);filter:blur(8px)}
 .hintergrund::after{content:"";position:absolute;inset:0;background:rgba(18,20,24,.18)}
+/* Eigenes Foto: liegt in assets/img/dashboard-hintergrund.jpg; fehlt es, bleibt das gemalte Wohnzimmer */
+.hintergrund .foto{position:absolute;inset:-8px;background:center/cover no-repeat;filter:blur(2px) saturate(115%);opacity:0;transition:opacity .6s ease}
+.hintergrund.mit-foto .foto{opacity:1}
+.hintergrund.mit-foto::after{background:rgba(18,20,24,.28)}
 
 .glas{background:var(--glas);border:1px solid var(--rand);border-radius:var(--radius);
   -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
@@ -319,7 +323,19 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 </style>
 </head>
 <body>
-<div class="hintergrund" aria-hidden="true"><div class="fenster"></div><div class="boden"></div><div class="pflanze"></div><div class="lampe"></div><div class="sofa"></div><div class="sofa2"></div></div>
+<div class="hintergrund" aria-hidden="true"><div class="fenster"></div><div class="boden"></div><div class="pflanze"></div><div class="lampe"></div><div class="sofa"></div><div class="sofa2"></div><div class="foto"></div></div>
+<script>
+(function(){
+  var bild = 'assets/img/dashboard-hintergrund.jpg?v=2';
+  var probe = new Image();
+  probe.onload = function(){
+    var h = document.querySelector('.hintergrund');
+    h.querySelector('.foto').style.backgroundImage = 'url("' + bild + '")';
+    h.classList.add('mit-foto');
+  };
+  probe.src = bild;
+})();
+</script>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-start" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></symbol>
