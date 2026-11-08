@@ -511,14 +511,39 @@
       var r = await fetch("https://www.tagesschau.de/api2u/homepage/");
       if (!r.ok) throw new Error();
       var d = await r.json();
-      var liste = (d.news || []).filter(function (n) { return n.title && n.shareURL && n.type !== "video"; }).slice(0, 5);
+      var alle = (d.news || []).filter(function (n) { return n.title && n.shareURL && n.type !== "video"; });
+      var liste = alle.slice(0, 5);
       if (!liste.length) throw new Error();
+      NACHR.ts = alle.slice(0, 10).map(function (n) {
+        return { quelle: "TAGESSCHAU", titel: n.title, link: n.shareURL, zeit: n.date, zusatz: RESSORT[n.ressort] || "" };
+      });
+      nachrichtenZeigen();
       $("l-welt").innerHTML = liste.map(function (n) {
         return '<li><a href="' + esc(n.shareURL) + '" target="_blank" rel="noopener"><span class="quelle">TS</span><span class="t"><b>' + esc(n.title) + "</b><small>" + esc(RESSORT[n.ressort] || "tagesschau") + (n.date ? " · " + vorWann(n.date) : "") + "</small></span></a></li>";
       }).join("");
     } catch (f) {
       leer("l-welt", "Die Schlagzeilen der Tagesschau sind gerade nicht erreichbar.");
+      NACHR.ts = []; nachrichtenZeigen();
     }
+  }
+
+  /* ---------------- Reiter Nachrichten ----------------
+     Eine gemeinsame Liste aus Lemgo Radio, Tagesschau, NIUS und BILD (je bis zu 10),
+     die neueste Meldung oben. Lemgo Radio, NIUS und BILD kommen aus demselben Abruf
+     wie der Schlagzeilen-Wechsler, die Tagesschau aus welt(). */
+  var NACHR = { ts: null, sz: null };
+  var NAME = { "LEMGO RADIO": "Lemgo Radio", TAGESSCHAU: "Tagesschau", NIUS: "NIUS", BILD: "BILD" };
+  var KUERZEL = { "LEMGO RADIO": "LR", TAGESSCHAU: "TS", NIUS: "NI", BILD: "BI" };
+  function nachrichtenZeigen() {
+    if (!$("n-alle") || NACHR.ts === null || NACHR.sz === null) return; // erst wenn beide Abrufe fertig sind
+    var liste = NACHR.ts.concat(NACHR.sz).sort(function (a, b) {
+      return (Date.parse(b.zeit) || 0) - (Date.parse(a.zeit) || 0);
+    });
+    if (!liste.length) { leer("n-alle", "Gerade keine Meldungen erreichbar."); return; }
+    $("n-alle").innerHTML = liste.map(function (n) {
+      var info = [NAME[n.quelle] || n.quelle, n.zusatz, n.zeit ? vorWann(n.zeit) : ""].filter(Boolean).join(" · ");
+      return '<li><a href="' + esc(n.link) + '" target="_blank" rel="noopener"><span class="quelle">' + esc(KUERZEL[n.quelle] || "") + '</span><span class="t"><b>' + esc(n.titel) + "</b><small>" + esc(info) + "</small></span></a></li>";
+    }).join("");
   }
 
   /* ---------------- Aufrufe Bad Salzuflen News ---------------- */
@@ -599,7 +624,9 @@
     var r;
     try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "schlagzeilen" } }); }
     catch (f) { r = { error: f }; }
-    SZ.liste = ((r && r.data && r.data.schlagzeilen) || []).slice(0, 21); // je Quelle etwa 7
+    var alleSz = (r && r.data && r.data.schlagzeilen) || [];
+    NACHR.sz = r.error ? [] : alleSz; nachrichtenZeigen();
+    SZ.liste = alleSz.slice(0, 21); // je Quelle etwa 7
     if (r.error || !SZ.liste.length) { $("sz-kopf").textContent = "Gerade keine Schlagzeilen erreichbar."; return; }
     $("sz-punkte").innerHTML = SZ.liste.map(function (s, i) {
       return '<button type="button" data-nr="' + i + '" aria-label="Schlagzeile ' + (i + 1) + ' zeigen"></button>';

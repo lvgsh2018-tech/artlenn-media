@@ -96,7 +96,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 .k h2{font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
 .k h2 a,.mehr{font-size:13px;font-weight:500;color:var(--schrift-3);text-decoration:none}
 .k h2 a:hover{color:var(--schrift)}
-.s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+.s3{grid-column:span 3}.s4{grid-column:span 4}.s6{grid-column:span 6}.s5{grid-column:span 5}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
 
 .zahl{transition:transform .25s cubic-bezier(.2,.8,.2,1),background .25s}
 .zahl:hover{transform:translateY(-4px);background:rgba(34,38,44,.5)}
@@ -265,6 +265,10 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 .redaktion-kopf a:hover{color:var(--schrift)}
 .redaktion iframe{flex:1;width:100%;border:0;border-radius:14px;background:#fff}
 @media (max-width:760px){.redaktion{height:calc(100vh - 190px)}}
+/* Nachrichten-Reiter: Schlagzeilen dürfen umbrechen */
+.nachrichten .liste .t b{white-space:normal;overflow:visible;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.nachrichten .liste li{align-items:flex-start}
+.nachrichten h2 .mehr{font-weight:400}
 .platz{padding:60px 30px;text-align:center;color:var(--schrift-2)}
 
 :focus-visible{outline:2px solid var(--petrol);outline-offset:2px}
@@ -284,7 +288,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 /* Schmaler als iPad quer: Reiter ohne Symbole, damit alle hineinpassen */
 @media (max-width:1300px){.reiter button svg.i{display:none}.reiter button{padding:8px 11px}.suche{min-width:120px}}
 /* iPad hochkant und kleiner: zwei Kacheln nebeneinander */
-@media (max-width:900px){.s3{grid-column:span 6}.s4,.s5,.s7,.s8{grid-column:span 12}}
+@media (max-width:900px){.s3{grid-column:span 6}.s4,.s5,.s6,.s7,.s8{grid-column:span 12}}
 @media (max-width:760px){
   .rahmen{grid-template-columns:1fr;padding:12px;gap:12px}
   .leiste{position:fixed;top:auto;transform:none;bottom:12px;left:12px;right:12px;height:auto;flex-direction:row;justify-content:space-around;padding:6px;z-index:5}
@@ -479,6 +483,15 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
       </div>
     </section>
 
+    <section class="ansicht" data-ansicht="nachrichten" hidden>
+      <div class="raster nachrichten">
+        <article class="k glas s12">
+          <h2>Nachrichten <span class="mehr">Lemgo Radio · Tagesschau · NIUS · BILD · neueste oben</span></h2>
+          <ul class="liste" id="n-alle"><li class="leer">wird geladen</li></ul>
+        </article>
+      </div>
+    </section>
+
     <section class="ansicht" data-ansicht="redaktion" hidden>
       <div class="glas redaktion">
         <div class="redaktion-kopf">
@@ -504,11 +517,11 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 <script>
 (function(){
-  var texte={nachrichten:"Hier erscheinen später alle Meldungen aus Bad Salzuflen und der Welt auf einer Seite."};
+  var texte={};
   function wechseln(ziel){
     if(ziel==="orbit"){location.href="orbit.html";return}
     if(ziel==="whatsapp"){window.open("https://web.whatsapp.com","_blank","noopener");return}
-    var welche=(ziel==="start"||ziel==="mail"||ziel==="kalender"||ziel==="redaktion")?ziel:"leer";
+    var welche=(ziel==="start"||ziel==="mail"||ziel==="kalender"||ziel==="redaktion"||ziel==="nachrichten")?ziel:"leer";
     // Redaktionsbereich erst beim ersten Öffnen laden
     if(ziel==="redaktion"){var rf=document.getElementById("redaktion-rahmen"); if(!rf.src) rf.src=rf.dataset.src;}
     document.querySelectorAll(".ansicht").forEach(function(a){a.hidden=a.dataset.ansicht!==welche});
@@ -526,6 +539,6 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   document.getElementById("datum").textContent=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 })();
 </script>
-<script src="assets/js/dashboard.js?v=20261108g"></script>
+<script src="assets/js/dashboard.js?v=20261108i"></script>
 </body>
 </html>
