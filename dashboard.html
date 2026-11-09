@@ -73,6 +73,7 @@ body{
 .leiste button:hover{background:var(--glas-hell);color:var(--schrift)}
 .leiste button[aria-current="true"]{background:rgba(255,255,255,.9);color:#1d2024}
 .leiste .unten{margin-top:6px}
+.leiste .ich,.ich-menue{display:none}
 svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
 /* Kopf: Begrüßung links, Reiter als Pille in der Mitte, Suche rechts */
@@ -298,8 +299,27 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 @media (max-width:900px){.s3{grid-column:span 6}.s4,.s5,.s6,.s7,.s8{grid-column:span 12}}
 @media (max-width:760px){
   .rahmen{grid-template-columns:1fr;padding:12px;gap:12px}
-  .leiste{position:fixed;top:auto;transform:none;bottom:12px;left:12px;right:12px;height:auto;flex-direction:row;justify-content:space-around;padding:6px;z-index:5}
+  /* Handy: Leiste unten wie bei Instagram – schwebende dunkle Glas-Pille, gewählter Bereich mit grauer Pille */
+  .leiste{position:fixed;top:auto;transform:none;bottom:calc(10px + env(safe-area-inset-bottom));left:14px;right:14px;height:auto;flex-direction:row;justify-content:space-between;align-items:center;gap:4px;
+    padding:6px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(20,22,26,.72);
+    -webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 12px 30px -10px rgba(0,0,0,.6);z-index:5}
+  .leiste button{width:auto;height:54px;flex:1;border-radius:999px;color:rgba(255,255,255,.92);transition:background .25s ease}
+  .leiste button svg.i{width:27px;height:27px;stroke-width:2}
+  .leiste button:hover{background:transparent}
+  .leiste button[aria-current="true"]{background:rgba(255,255,255,.17);color:#fff}
+  .leiste button[aria-current="true"] svg.i{stroke-width:2.5}
   .leiste img,.leiste .unten{display:none}
+  /* Rechts: kleines rundes Profilbild wie bei Instagram, öffnet die übrigen Bereiche */
+  .leiste .ich{display:grid;place-items:center}
+  .leiste .ich img{display:block;width:34px;height:34px;margin:0;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,.35)}
+  .leiste .ich[aria-expanded="true"]{background:rgba(255,255,255,.17)}
+  .ich-menue{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:6;flex-direction:column;padding:6px;min-width:200px;border-radius:20px;background:rgba(20,22,26,.8)}
+  .ich-menue:not([hidden]){display:flex}
+  .ich-menue button{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#fff;font:inherit;font-size:15px;padding:12px 14px;border-radius:14px;cursor:pointer;text-align:left}
+  .ich-menue button:active{background:rgba(255,255,255,.12)}
+  /* Handy: unten nur Übersicht, E-Mails, Kalender, Nachrichten */
+  .leiste button[data-ziel="redaktion"],.leiste button[data-ziel="orbit"],.leiste button[data-ziel="whatsapp"]{display:none}
   .suche{display:none}
   .kopf{grid-template-columns:1fr auto}
   .kopf .reiter{grid-column:1/-1;grid-row:2}
@@ -309,7 +329,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   .hinweis{display:none}
   .mail{grid-template-columns:1fr;height:auto}
   .lesen{display:none}
-  main{padding-bottom:84px}
+  main{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
   .diagramm{gap:6px}
   :root{--blur:blur(18px) saturate(140%)}
 }
@@ -369,8 +389,15 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
     <button data-ziel="redaktion" aria-label="Redaktion Bad Salzuflen News"><svg class="i"><use href="#i-stift"/></svg></button>
     <button data-ziel="orbit" aria-label="MeinOrbit"><svg class="i"><use href="#i-orbit"/></svg></button>
     <button data-ziel="whatsapp" aria-label="WhatsApp öffnen"><svg class="i"><use href="#i-chat"/></svg></button>
+    <button class="ich" id="ich" aria-label="Mehr: Redaktion, MeinOrbit, WhatsApp, Abmelden" aria-haspopup="true" aria-expanded="false"><img src="assets/img/profil.jpg" alt="" width="34" height="34"></button>
     <button class="unten" id="abmelden" aria-label="Abmelden" title="Abmelden"><svg class="i"><use href="#i-raus"/></svg></button>
   </nav>
+  <div class="ich-menue glas" id="ich-menue" hidden>
+    <button data-ziel="redaktion"><svg class="i"><use href="#i-stift"/></svg>Redaktion</button>
+    <button data-ziel="orbit"><svg class="i"><use href="#i-orbit"/></svg>MeinOrbit</button>
+    <button data-ziel="whatsapp"><svg class="i"><use href="#i-chat"/></svg>WhatsApp</button>
+    <button id="ich-raus"><svg class="i"><use href="#i-raus"/></svg>Abmelden</button>
+  </div>
 
   <main>
     <header class="kopf">
@@ -554,7 +581,14 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
     document.querySelectorAll(".leiste button[data-ziel]").forEach(function(b){b.setAttribute("aria-current",b.dataset.ziel===ziel)});
     window.scrollTo(0,0);
   }
+  var ich=document.getElementById("ich"),menue=document.getElementById("ich-menue");
+  function menueZu(){menue.hidden=true;ich.setAttribute("aria-expanded","false")}
+  ich.addEventListener("click",function(e){e.stopPropagation();var auf=menue.hidden;menue.hidden=!auf;ich.setAttribute("aria-expanded",String(auf))});
+  document.getElementById("ich-raus").addEventListener("click",function(){menueZu();document.getElementById("abmelden").click()});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")menueZu()});
   document.addEventListener("click",function(e){
+    if(!menue.hidden&&!e.target.closest("#ich-menue"))menueZu();
+    if(e.target.closest("#ich-menue [data-ziel]"))menueZu();
     var z=e.target.closest("[data-ziel]");
     if(z){e.preventDefault();wechseln(z.dataset.ziel)}
   });
