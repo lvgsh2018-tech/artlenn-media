@@ -3327,7 +3327,7 @@ async function dialogKanal(id) {
       <div class="gitter g2" style="margin-bottom:14px">
         <label class="feld"><span>Name</span>
           <input type="text" name="name" value="${e(a.name || "")}"
-            placeholder="@badsalzuflen_bilder"></label>
+            placeholder="@badsalzuflenbilder"></label>
         <label class="feld"><span>Wo?</span><select name="plattform">
           ${Object.entries(PLATTFORMNAME).map(([w, n]) => `<option value="${w}"
             ${(a.plattform || "instagram") === w ? "selected" : ""}>${n}</option>`).join("")}
