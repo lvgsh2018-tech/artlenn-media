@@ -196,7 +196,8 @@
     leer("l-erin", text);
   }
 
-  async function kontenLaden() {
+  function mailSichtbar() { var a = document.querySelector('[data-ansicht="mail"]'); return !!(a && !a.hidden); }
+  async function kontenLaden(neu) {
     var r;
     try {
       r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "uebersicht" } });
@@ -207,8 +208,12 @@
       return;
     }
     var d = r.data;
-    KONTEN.liste = d.konten || [];
-    KONTEN.mails = d.mails || [];
+    // Beim regelmäßigen Neuladen die Mail-Ansicht nicht unter den Fingern austauschen
+    var mailsLassen = neu && (KONTEN.ansicht || mailSichtbar());
+    if (!mailsLassen) {
+      KONTEN.liste = d.konten || [];
+      KONTEN.mails = d.mails || [];
+    }
     if (d.fehler && d.fehler.length) console.warn("Konten:", d.fehler);
 
     // Kalender
@@ -223,6 +228,7 @@
     erinnerungenZeigen(d);
 
     // Mails
+    if (mailsLassen) return;
     if (!KONTEN.liste.length) { nichtVerbunden("Mails und Kalender sind noch nicht verbunden."); kalenderZeigen(d); return; }
     var summe = 0;
     Object.keys(d.ungelesen || {}).forEach(function (k) { summe += d.ungelesen[k]; });
@@ -991,5 +997,26 @@
       console.error(f);
       orbitFehler("MeinOrbit ließ sich nicht laden.");
     });
+    // Alle 2 Minuten alles neu holen, ohne die Seite neu zu laden (Radio läuft weiter)
+    setInterval(allesNeu, NEU_ALLE);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && Date.now() - ZULETZT_NEU > NEU_ALLE) allesNeu();
+    });
   });
+
+  var NEU_ALLE = 120000, ZULETZT_NEU = Date.now();
+  function allesNeu() {
+    if (document.hidden) return; // im Hintergrund nichts abrufen, beim Zurückkommen sofort
+    ZULETZT_NEU = Date.now();
+    if (!mailSichtbar()) { KONTEN.ansicht = null; KONTEN.aktiv = null; }
+    kontenLaden(true);
+    aktienLaden();
+    aufrufeLaden();
+    instagramLaden();
+    kommentareLaden();
+    schlagzeilenLaden();
+    badSalzuflen();
+    welt();
+    orbitLaden().then(orbitZeigen).catch(function (f) { console.warn("MeinOrbit:", f); });
+  }
 })();
