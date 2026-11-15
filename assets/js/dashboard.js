@@ -786,12 +786,62 @@
     tickerStart(r.data.aktien);
   }
 
+  /* ---------------- Läuft gerade (Spotify, sonst Radio) ---------------- */
+
+  var MUSIK = { letzter: "" };
+  async function musikLaden() {
+    if (document.hidden) return;
+    var r;
+    try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "musik" } }); }
+    catch (f) { r = { error: f }; }
+    var d = r && !r.error && r.data;
+    $("spotify-verbinden").hidden = !(d && d.spotifyVerbinden);
+    if (!d || !d.titel) { $("laeuft").hidden = true; MUSIK.letzter = ""; return; }
+    var schl = d.quelle + "|" + d.interpret + "|" + d.titel;
+    if (schl === MUSIK.letzter) return;
+    MUSIK.letzter = schl;
+    $("laeuft-titel").textContent = d.titel;
+    $("laeuft-wer").textContent = d.interpret || d.sender;
+    $("laeuft").title = "Läuft gerade bei " + d.sender;
+    $("laeuft").href = d.link || "#";
+    $("laeuft").setAttribute("aria-label", "Läuft gerade bei " + d.sender + ": " + d.titel + (d.interpret ? " von " + d.interpret : ""));
+    var bild = $("laeuft-bild");
+    if (d.cover) { bild.onerror = function () { bild.hidden = true; }; bild.src = d.cover; bild.hidden = false; }
+    else { bild.hidden = true; bild.removeAttribute("src"); }
+    $("laeuft").hidden = false;
+  }
+
+  async function spotifyVerbinden() {
+    var zustand = Math.random().toString(36).slice(2);
+    try { localStorage.setItem("spotify-zustand", zustand); } catch (_) { /* egal */ }
+    var r;
+    try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "spotify-link", zustand: zustand } }); }
+    catch (f) { r = { error: f }; }
+    if (r.error || !r.data || !r.data.link) { var k = $("spotify-verbinden"); k.title = "Spotify ist noch nicht eingerichtet"; k.setAttribute("aria-label", k.title); return; }
+    location.href = r.data.link;
+  }
+
+  // Rückkehr von Spotify nach dem Erlauben
+  async function spotifyRueckkehr() {
+    var q = new URLSearchParams(location.search);
+    if (!q.has("code") && !q.has("error")) return;
+    var erwartet = null;
+    try { erwartet = localStorage.getItem("spotify-zustand"); localStorage.removeItem("spotify-zustand"); } catch (_) { /* egal */ }
+    history.replaceState(null, "", location.pathname + location.hash);
+    if (!q.get("code") || !erwartet || q.get("state") !== erwartet) return;
+    try { await sb.functions.invoke("dashboard-konten", { body: { aktion: "spotify-verbinden", code: q.get("code") } }); }
+    catch (f) { console.error(f); }
+  }
+
   /* ---------------- Start ---------------- */
 
   badSalzuflen();
   welt();
 
   if (!sb) { orbitFehler("Keine Verbindung zu MeinOrbit eingerichtet."); return; }
+
+  $("spotify-verbinden").addEventListener("click", spotifyVerbinden);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) musikLaden(); });
 
   $("abmelden").addEventListener("click", function () {
     sb.auth.signOut().then(function () { location.replace("anmelden.html"); });
@@ -870,6 +920,8 @@
     instagramLaden();
     kommentareLaden();
     schlagzeilenLaden();
+    spotifyRueckkehr().then(musikLaden);
+    setInterval(musikLaden, 30000);
     orbitLaden().then(orbitZeigen).catch(function (f) {
       console.error(f);
       orbitFehler("MeinOrbit ließ sich nicht laden.");
