@@ -788,27 +788,91 @@
 
   /* ---------------- Läuft gerade (Spotify, sonst Radio) ---------------- */
 
-  var MUSIK = { letzter: "" };
+  var MUSIK = { letzter: "", daten: null };
+  var RADIO = { name: "Absolut Top 2000er", seite: "https://absolutradio.de/top",
+    strom: "https://absolut-top.live-sm.absolutradio.de/absolut-top/stream/aacp?maxvbr=3&aggregator=website", ton: null };
+
+  function musikZeigen(d) {
+    // Ohne Titel (Werbung, Nachrichten) trotzdem die Pille mit dem Sender zeigen, damit der Knopf bleibt
+    var titel = d && d.titel ? d.titel : RADIO.name;
+    var wer = d && d.titel ? (d.interpret || d.sender) : (radioLaeuft() ? "läuft" : "Radio");
+    var sender = d && d.titel ? d.sender : RADIO.name;
+    $("laeuft-titel").textContent = titel;
+    $("laeuft-wer").textContent = wer;
+    $("laeuft-link").href = (d && d.titel && d.link) || RADIO.seite;
+    $("laeuft-link").title = "Läuft gerade bei " + sender;
+    $("laeuft-link").setAttribute("aria-label", d && d.titel ? "Läuft gerade bei " + sender + ": " + titel + (d.interpret ? " von " + d.interpret : "") : RADIO.name + " öffnen");
+    var bild = $("laeuft-bild");
+    if (d && d.titel && d.cover) { bild.onerror = function () { bild.hidden = true; }; if (bild.src !== d.cover) bild.src = d.cover; bild.hidden = false; }
+    else { bild.hidden = true; bild.removeAttribute("src"); }
+    // Wellen nur, wenn wirklich etwas spielt: Spotify oder das Radio hier im Dashboard
+    document.querySelector(".laeuft-wellen").hidden = !((d && d.quelle === "spotify") || radioLaeuft());
+    $("laeuft").hidden = false;
+    if (radioLaeuft() && "mediaSession" in navigator && d && d.quelle === "radio") {
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({ title: d.titel || RADIO.name, artist: d.titel ? d.interpret : "", album: RADIO.name,
+          artwork: d.cover ? [{ src: d.cover, sizes: "200x200", type: "image/jpeg" }] : [] });
+      } catch (_) { /* egal */ }
+    }
+  }
+
   async function musikLaden() {
-    if (document.hidden) return;
+    if (document.hidden && !radioLaeuft()) return;
     var r;
     try { r = await sb.functions.invoke("dashboard-konten", { body: { aktion: "musik" } }); }
     catch (f) { r = { error: f }; }
     var d = r && !r.error && r.data;
     $("spotify-verbinden").hidden = !(d && d.spotifyVerbinden);
-    if (!d || !d.titel) { $("laeuft").hidden = true; MUSIK.letzter = ""; return; }
+    if (!d) { musikZeigen(MUSIK.daten); return; }
     var schl = d.quelle + "|" + d.interpret + "|" + d.titel;
-    if (schl === MUSIK.letzter) return;
+    MUSIK.daten = d;
+    if (schl === MUSIK.letzter && !$("laeuft").hidden) return;
     MUSIK.letzter = schl;
-    $("laeuft-titel").textContent = d.titel;
-    $("laeuft-wer").textContent = d.interpret || d.sender;
-    $("laeuft").title = "Läuft gerade bei " + d.sender;
-    $("laeuft").href = d.link || "#";
-    $("laeuft").setAttribute("aria-label", "Läuft gerade bei " + d.sender + ": " + d.titel + (d.interpret ? " von " + d.interpret : ""));
-    var bild = $("laeuft-bild");
-    if (d.cover) { bild.onerror = function () { bild.hidden = true; }; bild.src = d.cover; bild.hidden = false; }
-    else { bild.hidden = true; bild.removeAttribute("src"); }
-    $("laeuft").hidden = false;
+    musikZeigen(d);
+  }
+
+  /* Radio direkt im Dashboard abspielen */
+  function radioLaeuft() { return !!(RADIO.ton && !RADIO.ton.paused); }
+  function radioKnopf(zustand) {
+    var k = $("radio-knopf");
+    k.classList.toggle("laedt", zustand === "laedt");
+    k.setAttribute("aria-pressed", zustand === "an" ? "true" : "false");
+    k.setAttribute("aria-label", zustand === "an" ? RADIO.name + " anhalten" : RADIO.name + " abspielen");
+    k.querySelector("use").setAttribute("href", zustand === "aus" ? "#i-play" : "#i-pause");
+  }
+  function radioStart() {
+    if (!RADIO.ton) {
+      RADIO.ton = new Audio();
+      RADIO.ton.preload = "none";
+      RADIO.ton.addEventListener("playing", function () { radioKnopf("an"); musikZeigen(MUSIK.daten); });
+      RADIO.ton.addEventListener("waiting", function () { radioKnopf("laedt"); });
+      RADIO.ton.addEventListener("pause", function () { radioKnopf("aus"); musikZeigen(MUSIK.daten); });
+      RADIO.ton.addEventListener("error", function () {
+        if (!RADIO.ton.getAttribute("src")) return;
+        radioKnopf("aus"); $("laeuft-wer").textContent = "Radio gerade nicht erreichbar";
+      });
+      if ("mediaSession" in navigator) {
+        try {
+          navigator.mediaSession.setActionHandler("play", radioStart);
+          navigator.mediaSession.setActionHandler("pause", radioStopp);
+          navigator.mediaSession.setActionHandler("stop", radioStopp);
+        } catch (_) { /* egal */ }
+      }
+    }
+    // Bei jedem Start neu verbinden, damit es live weitergeht statt an der alten Stelle
+    RADIO.ton.src = RADIO.strom + "&t=" + Date.now();
+    radioKnopf("laedt");
+    var p = RADIO.ton.play();
+    if (p && p.catch) p.catch(function () { radioKnopf("aus"); });
+    musikLaden();
+  }
+  function radioStopp() {
+    if (!RADIO.ton) return;
+    RADIO.ton.pause();
+    RADIO.ton.removeAttribute("src");
+    RADIO.ton.load();
+    radioKnopf("aus");
+    musikZeigen(MUSIK.daten);
   }
 
   async function spotifyVerbinden() {
@@ -841,6 +905,7 @@
   if (!sb) { orbitFehler("Keine Verbindung zu MeinOrbit eingerichtet."); return; }
 
   $("spotify-verbinden").addEventListener("click", spotifyVerbinden);
+  $("radio-knopf").addEventListener("click", function () { if (radioLaeuft() || this.classList.contains("laedt")) radioStopp(); else radioStart(); });
   document.addEventListener("visibilitychange", function () { if (!document.hidden) musikLaden(); });
 
   $("abmelden").addEventListener("click", function () {

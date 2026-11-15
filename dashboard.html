@@ -94,9 +94,18 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 .gruss h1{font-size:24px;font-weight:600;letter-spacing:-.02em;text-shadow:0 1px 12px rgba(0,0,0,.25)}
 .gruss p{color:var(--schrift-2);margin-top:1px;font-size:13.5px;text-shadow:0 1px 10px rgba(0,0,0,.3)}
 /* Läuft gerade: Glas-Pille oben rechts, gleiche Höhe wie die Reiter */
-.laeuft{display:flex;align-items:center;gap:10px;flex:0 1 330px;min-width:0;height:48px;padding:0 16px 0 8px;border-radius:999px;color:var(--schrift);text-decoration:none;transition:background .2s ease}
-.laeuft:hover{background:var(--glas-stark)}
-.laeuft:focus-visible,.laeuft-verbinden:focus-visible{outline:2px solid var(--blau-hell);outline-offset:2px}
+.laeuft{display:flex;align-items:center;gap:8px;flex:0 1 350px;min-width:0;height:48px;padding:0 4px 0 8px;border-radius:999px;color:var(--schrift)}
+.laeuft-link{display:flex;align-items:center;gap:10px;flex:1;min-width:0;height:100%;color:inherit;text-decoration:none;border-radius:999px}
+.laeuft-link:hover .laeuft-titel{text-decoration:underline;text-underline-offset:2px}
+.laeuft-knopf{flex:none;display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:var(--schrift);cursor:pointer;transition:background .2s ease,transform .15s ease}
+.laeuft-knopf:hover{background:rgba(255,255,255,.22)}
+.laeuft-knopf:active{transform:scale(.94)}
+.laeuft-knopf svg.i{width:18px;height:18px}
+.laeuft-knopf[aria-pressed="true"]{background:var(--gruen);color:#14171a}
+.laeuft-knopf.laedt svg.i{animation:laden 1s ease-in-out infinite}
+@keyframes laden{0%,100%{opacity:1}50%{opacity:.35}}
+.laeuft-wellen[hidden]{display:none}
+.laeuft-link:focus-visible,.laeuft-knopf:focus-visible,.laeuft-verbinden:focus-visible{outline:2px solid var(--blau-hell);outline-offset:2px}
 .laeuft[hidden],.laeuft-verbinden[hidden]{display:none}
 .laeuft-cover{position:relative;flex:none;width:32px;height:32px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.1);display:grid;place-items:center;color:var(--schrift-2)}
 .laeuft-cover svg.i{width:15px;height:15px}
@@ -404,6 +413,8 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   <symbol id="i-punkt" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/></symbol>
   <symbol id="i-ordner" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
   <symbol id="i-stift" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-note" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
   <symbol id="i-such" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
 </svg>
@@ -440,11 +451,14 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
       </div>
       <div class="rechts">
         <button class="laeuft-verbinden glas" id="spotify-verbinden" type="button" aria-label="Spotify verbinden" title="Spotify verbinden" hidden><svg class="i" aria-hidden="true"><use href="#i-note"/></svg><span>Spotify verbinden</span></button>
-        <a class="laeuft glas" id="laeuft" href="#" target="_blank" rel="noopener" hidden>
-          <span class="laeuft-cover"><svg class="i" aria-hidden="true"><use href="#i-note"/></svg><img id="laeuft-bild" alt="" width="30" height="30" hidden></span>
-          <span class="laeuft-text"><span class="laeuft-titel" id="laeuft-titel"></span><span class="laeuft-wer" id="laeuft-wer"></span></span>
+        <div class="laeuft glas" id="laeuft" hidden>
+          <a class="laeuft-link" id="laeuft-link" href="#" target="_blank" rel="noopener">
+            <span class="laeuft-cover"><svg class="i" aria-hidden="true"><use href="#i-note"/></svg><img id="laeuft-bild" alt="" width="30" height="30" hidden></span>
+            <span class="laeuft-text"><span class="laeuft-titel" id="laeuft-titel"></span><span class="laeuft-wer" id="laeuft-wer"></span></span>
+          </a>
           <span class="laeuft-wellen" aria-hidden="true"><i></i><i></i><i></i></span>
-        </a>
+          <button class="laeuft-knopf" id="radio-knopf" type="button" aria-label="Absolut Top 2000er abspielen" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg></button>
+        </div>
         <img class="person profilbild" src="assets/img/profil.jpg" alt="Lennart" width="38" height="38">
       </div>
     </header>
@@ -630,6 +644,6 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   document.getElementById("datum").textContent=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 })();
 </script>
-<script src="assets/js/dashboard.js?v=20261115d"></script>
+<script src="assets/js/dashboard.js?v=20261115e"></script>
 </body>
 </html>
