@@ -114,6 +114,8 @@
 
   /* ---------------- Mails ---------------- */
 
+  var PERSON = null;
+  function sigHinweis() { return PERSON ? "Deine Signatur (" + PERSON.name + ", " + PERSON.rolle + ") wird automatisch angehängt." : ""; }
   var MAIL = { art: "inbox", liste: [], aktiv: null, mehr: false, aelteste: null, laeuft: 0, geladen: false, postfach: "" };
   function mailZeit(iso) {
     if (!iso) return "";
@@ -250,7 +252,7 @@
     var antwort = m.art !== "inbox" ? "" :
       '<form class="antwort-feld" data-antwort novalidate><label for="antwort-text">Antwort an ' + esc(d.antwortAn || m.vonAdresse) + '</label>' +
       '<textarea id="antwort-text" name="text" placeholder="Guten Tag …" required></textarea>' +
-      '<div class="antwort-fuss"><button class="knopf" type="submit">Antwort senden</button><small>Geht von ' + esc(MAIL.postfach) + ' raus, die ursprüngliche Mail wird angehängt.</small>' +
+      '<div class="antwort-fuss"><button class="knopf" type="submit">Antwort senden</button><small>Geht von ' + esc(MAIL.postfach) + ' raus, mit deiner Signatur, die ursprüngliche Mail wird angehängt.</small>' +
       '<span class="antwort-meldung" aria-live="polite"></span></div></form>';
     var fuss = (bilder ? '<div class="anh-bilder">' + bilder + "</div>" : "") + (rest.length ? '<p class="anh">Anhänge: ' + esc(rest.join(", ")) + "</p>" : "") + antwort;
     if (!d.html) { $("lesen").innerHTML = kopf + '<div class="text">' + esc(d.text || "(kein Text)") + "</div>" + fuss; return; }
@@ -270,6 +272,7 @@
       '<p class="hilfe" style="margin-top:-8px">Mehrere Empfänger mit Komma trennen.</p>' +
       '<label class="feld"><span>Betreff</span><input name="betreff" type="text" maxlength="300" autocomplete="off"></label>' +
       '<div class="antwort-feld"><label for="neu-text">Text</label><textarea id="neu-text" name="text" placeholder="Guten Tag …"></textarea></div>' +
+      (PERSON ? '<p class="hilfe" style="margin-top:-6px">' + esc(sigHinweis()) + "</p>" : "") +
       '<div class="antwort-fuss"><button class="knopf" type="submit">Senden</button><button class="knopf leise" type="button" data-verwerfen>Verwerfen</button>' +
       '<span class="antwort-meldung" aria-live="polite"></span></div></form>';
     $("lesen").querySelector('[name="an"]').focus();
@@ -571,6 +574,11 @@
       return;
     }
     MAIL.postfach = d.postfach || "";
+    if (d.person && !PERSON) {
+      PERSON = d.person;
+      var vorname = String(PERSON.name).split(" ")[0];
+      $("gruss").textContent = $("gruss").textContent.replace(/,.*$/, "") + ", " + vorname;
+    }
     $("mail-adresse").textContent = MAIL.postfach ? "an " + MAIL.postfach : "";
     $("vorschau").hidden = !d.vorschau;
     UEBER.mehr = d.mehr; UEBER.aelteste = d.aelteste;
