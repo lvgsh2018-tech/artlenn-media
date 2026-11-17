@@ -100,7 +100,17 @@
     $("l-aufrufe").closest("svg").setAttribute("aria-label", "Aufrufe der letzten 14 Tage: " + z.map(t).join(", "));
   }
 
+  async function interaktionenLaden() {
+    var d = await abruf({ aktion: "instagram-mehr" });
+    var k = d.kennzahlen && d.kennzahlen.total_interactions;
+    if (d.fehler || d.fehlt || !k || k.jetzt == null) { setzen("z-iai", "–", d.fehlt ? "noch nicht verbunden" : "nicht erreichbar"); return; }
+    var p = k.davor ? Math.round((k.jetzt - k.davor) / k.davor * 100) : null;
+    setzen("z-iai", k.jetzt.toLocaleString("de-DE"), p == null ? "Likes, Kommentare, Geteilt, Gespeichert"
+      : '<span class="' + (p >= 0 ? "plus" : "minus") + '">' + (p >= 0 ? "+" : "−") + Math.abs(p) + " %</span> zu den 30 Tagen davor");
+  }
+
   async function instagramLaden() {
+    interaktionenLaden();
     var d = await abruf({ aktion: "instagram" });
     if (d.fehler) { setzen("z-ig", "–", "nicht erreichbar"); setzen("z-igv", "–", "nicht erreichbar"); return; }
     if (d.fehlt) { setzen("z-ig", "–", "noch nicht verbunden"); setzen("z-igv", "–", "noch nicht verbunden"); return; }
