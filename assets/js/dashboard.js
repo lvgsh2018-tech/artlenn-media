@@ -993,6 +993,7 @@
     instagramLaden();
     kommentareLaden();
     schlagzeilenLaden();
+    if (window.AM_WP) window.AM_WP.start(wpAbruf);
     spotifyRueckkehr().then(musikLaden);
     setInterval(musikLaden, 30000);
     orbitLaden().then(orbitZeigen).catch(function (f) {
@@ -1006,6 +1007,19 @@
     });
   });
 
+  // Abruf für die Werbepartner-Kachel (assets/js/werbepartner.js)
+  async function wpAbruf(body) {
+    var r;
+    try { r = await sb.functions.invoke("dashboard-konten", { body: body }); }
+    catch (f) { r = { error: f }; }
+    if (r.error) {
+      var grund = "nicht erreichbar";
+      try { var x = await r.error.context.json(); if (x && x.fehler) grund = x.fehler; } catch (_) { /* kein Text */ }
+      return { fehler: grund };
+    }
+    return r.data || { fehler: "keine Antwort" };
+  }
+
   var NEU_ALLE = 120000, ZULETZT_NEU = Date.now();
   function allesNeu() {
     if (document.hidden) return; // im Hintergrund nichts abrufen, beim Zurückkommen sofort
@@ -1017,6 +1031,7 @@
     instagramLaden();
     kommentareLaden();
     schlagzeilenLaden();
+    if (window.AM_WP) window.AM_WP.neu();
     badSalzuflen();
     welt();
     orbitLaden().then(orbitZeigen).catch(function (f) { console.warn("MeinOrbit:", f); });

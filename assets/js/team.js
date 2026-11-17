@@ -663,6 +663,7 @@
     uebersichtLaden();
     aufrufeLaden();
     instagramLaden();
+    if (window.AM_WP) window.AM_WP.start(abruf);
     setInterval(allesNeu, 120000);
     document.addEventListener("visibilitychange", function () { if (!document.hidden && Date.now() - ZULETZT > 120000) allesNeu(); });
   });
@@ -672,6 +673,7 @@
     if (document.hidden) return;
     ZULETZT = Date.now();
     uebersichtLaden();
+    if (window.AM_WP) window.AM_WP.neu();
     aufrufeLaden();
     instagramLaden();
     badSalzuflen();

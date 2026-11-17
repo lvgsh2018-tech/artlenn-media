@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="Team">
 <meta name="theme-color" content="#77736d">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="stylesheet" href="assets/css/werbepartner.css?v=20261117a">
 <style>
 :root{
   --glas: rgba(44,46,50,.5);
@@ -546,17 +547,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
           <ul class="liste" id="mails-kurz"><li class="leer">wird geladen</li></ul>
         </article>
 
-        <article class="k glas s4">
-          <h2>Erinnerungen <a href="#" data-ziel="erinnerungen" id="erin-zahl">Alle</a></h2>
-          <form class="erin-form kurz" data-erin-form novalidate>
-            <label class="feld titel"><span>Neue Erinnerung</span><input name="titel" type="text" maxlength="200" autocomplete="off" placeholder="z. B. Fotos vom Stadtfest sichten"></label>
-            <label class="feld datum"><span>Datum</span><input name="datum" type="date"></label>
-            <label class="feld uhr"><span>Uhrzeit</span><input name="uhrzeit" type="time"></label>
-            <button class="knopf" type="submit">Hinzufügen</button>
-          </form>
-          <p class="erin-meldung" data-erin-meldung aria-live="polite"></p>
-          <ul class="liste erin" id="erin-kurz"><li class="leer">wird geladen</li></ul>
-        </article>
+        <article class="k glas s4 wp-karte" id="wp-karte" aria-label="Werbepartner"></article>
 
         <article class="k glas s8 wochekarte">
           <h2>Diese Woche <a href="#" data-ziel="kalender">Kalender Bad Salzuflen News</a></h2>
@@ -586,6 +577,18 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
         <article class="k glas s6">
           <h2>Welt <a href="https://www.tagesschau.de" target="_blank" rel="noopener">tagesschau.de</a></h2>
           <ul class="liste" id="l-welt"><li class="leer">wird geladen</li></ul>
+        </article>
+
+        <article class="k glas s12 erin-unten">
+          <h2>Erinnerungen <a href="#" data-ziel="erinnerungen" id="erin-zahl">Alle</a></h2>
+          <form class="erin-form kurz" data-erin-form novalidate>
+            <label class="feld titel"><span>Neue Erinnerung</span><input name="titel" type="text" maxlength="200" autocomplete="off" placeholder="z. B. Fotos vom Stadtfest sichten"></label>
+            <label class="feld datum"><span>Datum</span><input name="datum" type="date"></label>
+            <label class="feld uhr"><span>Uhrzeit</span><input name="uhrzeit" type="time"></label>
+            <button class="knopf" type="submit">Hinzufügen</button>
+          </form>
+          <p class="erin-meldung" data-erin-meldung aria-live="polite"></p>
+          <ul class="liste erin" id="erin-kurz"><li class="leer">wird geladen</li></ul>
         </article>
       </div>
     </section>
@@ -644,6 +647,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 
 <script src="assets/js/vendor/supabase.min.js"></script>
 <script src="assets/js/config.js"></script>
-<script src="assets/js/team.js?v=20261117e"></script>
+<script src="assets/js/werbepartner.js?v=20261117a"></script>
+<script src="assets/js/team.js?v=20261117f"></script>
 </body>
 </html>

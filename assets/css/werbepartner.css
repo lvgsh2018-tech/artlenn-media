@@ -1,0 +1,102 @@
+/* Werbepartner-Kachel und -Fenster (dashboard.html, team.html).
+   Nutzt die Farben der Seiten (--glas, --rand, --gelb …). Die Ampel steht nie
+   allein: daneben steht immer der Stand als Wort. */
+.unsichtbar{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.wp-ampel{flex:none;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.38);box-shadow:0 0 0 3px rgba(255,255,255,.06);transition:background .2s ease}
+.wp-ampel[data-s="angerufen"]{background:var(--gelb);box-shadow:0 0 0 3px rgba(250,209,86,.16)}
+.wp-ampel[data-s="warten"]{background:var(--orange);box-shadow:0 0 0 3px rgba(254,127,68,.18)}
+.wp-ampel[data-s="zusage"]{background:var(--gruen);box-shadow:0 0 0 3px rgba(163,204,145,.18)}
+.wp-ampel[data-s="absage"]{background:var(--pink);box-shadow:0 0 0 3px rgba(250,124,146,.18)}
+
+.wp-karte{display:flex;flex-direction:column;min-height:0}
+.wp-neu{display:inline-flex;align-items:center;gap:5px;min-height:36px;padding:0 13px;border:1px solid var(--rand);border-radius:999px;background:var(--glas-hell);color:var(--schrift);font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s ease,transform .15s ease}
+.wp-neu span{font-size:16px;line-height:1;margin-top:-1px}
+.wp-neu:hover{background:rgba(255,255,255,.18)}
+.wp-neu:active{transform:scale(.96)}
+
+.wp-filter{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:-2px -2px 10px;padding:2px}
+.wp-filter::-webkit-scrollbar{display:none}
+.wp-filter button{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 10px;border:1px solid var(--rand);border-radius:999px;background:transparent;color:var(--schrift-2);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .2s ease,color .2s ease}
+.wp-filter button .wp-ampel{width:8px;height:8px;box-shadow:none}
+.wp-filter button b{font-weight:600;color:var(--schrift-3);font-variant-numeric:tabular-nums}
+.wp-filter button:hover{color:var(--schrift)}
+.wp-filter button[aria-pressed="true"]{background:rgba(255,255,255,.18);color:var(--schrift);border-color:transparent}
+.wp-filter button[aria-pressed="true"] b{color:var(--schrift)}
+
+.wp-suche{display:block;margin-bottom:6px}
+.wp-suche input{width:100%;min-height:40px;padding:0 12px;border:1px solid var(--rand);border-radius:10px;background:var(--glas-hell);color:var(--schrift);font:inherit;font-size:14px;outline:none;color-scheme:dark}
+.wp-suche input::placeholder{color:var(--schrift-3)}
+.wp-suche input:focus{border-color:var(--rand-hell);box-shadow:0 0 0 3px rgba(125,178,255,.25)}
+
+.wp-liste{max-height:340px;overflow-y:auto;margin:0 -8px;padding:0 0 2px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
+.wp-liste li{min-height:52px}
+.wp-liste li:focus-visible{outline:2px solid var(--blau-hell);outline-offset:-2px}
+.wp-liste .wp-ort{font-weight:400;color:var(--schrift-3);font-size:12.5px;margin-left:4px}
+.wp-liste .t small em{font-style:normal;color:var(--gelb)}
+.wp-liste .wp-anruf{flex:none;display:grid;place-items:center;width:40px;height:40px;margin:-6px -4px -6px 0;border-radius:50%;color:var(--schrift-2);transition:background .2s ease,color .2s ease}
+.wp-liste .wp-anruf:hover{background:var(--glas-hell);color:var(--schrift)}
+.wp-liste .wp-anruf svg,.wp-x svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* Fenster */
+.wp-fenster{position:fixed;inset:0;margin:auto;width:min(680px,calc(100vw - 32px));max-height:calc(100dvh - 48px);padding:0;color:var(--schrift);background:rgba(34,36,40,.82);overflow:auto;overscroll-behavior:contain}
+.wp-fenster::backdrop{background:rgba(10,12,15,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.wp-fenster[open]{animation:wp-auf .2s cubic-bezier(.2,.8,.2,1)}
+@keyframes wp-auf{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.wp-fenster[open]{animation:none}}
+.wp-form{display:flex;flex-direction:column;gap:18px;padding:22px 24px 20px}
+.wp-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.wp-kopf h3{font-size:19px;font-weight:600;letter-spacing:-.01em;overflow-wrap:anywhere}
+.wp-x{flex:none;display:grid;place-items:center;width:44px;height:44px;margin:-8px -10px -8px 0;border:0;border-radius:50%;background:transparent;color:var(--schrift-2);cursor:pointer}
+.wp-x:hover{background:var(--glas-hell);color:var(--schrift)}
+.wp-schnell{display:flex;flex-wrap:wrap;gap:8px;margin-top:-6px}
+.wp-schnell .knopf{display:inline-flex;align-items:center;text-decoration:none;min-height:40px;font-size:13.5px}
+
+.wp-stand{border:0;min-width:0}
+.wp-stand legend{font-size:12px;color:var(--schrift-2);margin-bottom:8px}
+.wp-stand div{display:flex;flex-wrap:wrap;gap:8px}
+.wp-stand button{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1px solid var(--rand);border-radius:999px;background:transparent;color:var(--schrift-2);font:inherit;font-size:13.5px;cursor:pointer;transition:background .2s ease,color .2s ease,border-color .2s ease}
+.wp-stand button:hover{color:var(--schrift);background:var(--glas-hell)}
+.wp-stand button[aria-checked="true"]{background:rgba(255,255,255,.9);color:#16191d;border-color:transparent;font-weight:600}
+.wp-stand button:focus-visible,.wp-filter button:focus-visible,.wp-neu:focus-visible,.wp-x:focus-visible,.wp-anruf:focus-visible{outline:2px solid var(--blau-hell);outline-offset:2px}
+
+.wp-felder{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+.wp-felder .voll{grid-column:1/-1}
+.wp-f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.wp-f span{font-size:12px;color:var(--schrift-2)}
+.wp-f input,.wp-f textarea{width:100%;min-height:44px;padding:0 12px;border:1px solid var(--rand);border-radius:10px;background:var(--glas-hell);color:var(--schrift);font:inherit;font-size:15px;outline:none;color-scheme:dark}
+.wp-f textarea{padding:10px 12px;resize:vertical;line-height:1.5;min-height:84px}
+.wp-f input:focus,.wp-f textarea:focus{border-color:var(--rand-hell);box-shadow:0 0 0 3px rgba(125,178,255,.25)}
+.wp-f input::placeholder,.wp-f textarea::placeholder{color:var(--schrift-3)}
+
+.wp-verlauf p{font-size:12px;color:var(--schrift-2);margin-bottom:6px}
+.wp-verlauf ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+.wp-verlauf li{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--schrift-2)}
+.wp-verlauf li .wp-ampel{width:8px;height:8px;box-shadow:none}
+.wp-verlauf li small{margin-left:auto;color:var(--schrift-3);font-size:12.5px;white-space:nowrap}
+
+.wp-meldung{font-size:13px;color:var(--schrift-3);min-height:18px;margin:-8px 0 -6px}
+.wp-meldung.fehler{color:var(--pink)}
+.wp-fuss{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.wp-rechts{display:flex;gap:8px;margin-left:auto}
+.wp-fenster .knopf{min-height:44px}
+.wp-fenster .knopf.leise{background:transparent;color:var(--schrift-2);border:1px solid var(--rand);font-weight:500}
+.wp-fenster .knopf.leise:hover{color:var(--schrift);background:var(--glas-hell)}
+.wp-fenster .knopf[disabled]{opacity:.55;cursor:default}
+.wp-loeschen.knopf.leise{color:var(--pink);border-color:rgba(250,124,146,.35)}
+
+/* Erinnerungen unten über die volle Breite: Liste in Spalten */
+.erin-unten .liste{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:18px}
+.erin-unten .liste li+li{border-top:0}
+.erin-unten .liste li{border-bottom:1px solid rgba(255,255,255,.06)}
+.erin-unten .liste li.leer{grid-column:1/-1;border-bottom:0}
+@media (max-width:1100px){.erin-unten .liste{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+@media (max-width:760px){
+  .wp-fenster{width:100vw;max-width:100vw;max-height:calc(100dvh - 24px);margin:auto 0 0;border-radius:22px 22px 0 0}
+  .wp-form{padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+  .wp-felder{grid-template-columns:1fr}
+  .wp-felder .plz{grid-column:auto}
+  .wp-liste{max-height:none}
+  .erin-unten .liste{grid-template-columns:1fr}
+}

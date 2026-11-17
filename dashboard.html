@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="Dashboard">
 <meta name="theme-color" content="#77736d">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="stylesheet" href="assets/css/werbepartner.css?v=20261117a">
 <style>
 :root{
   --glas: rgba(44,46,50,.5);
@@ -514,10 +515,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
           <div class="woche" id="woche"><p class="leer-text">wird geladen</p></div>
         </article>
 
-        <article class="k glas s4">
-          <h2>Erinnerungen <span class="mehr" id="erin-stand">iCloud</span></h2>
-          <ul class="liste" id="l-erin"><li class="leer">wird geladen</li></ul>
-        </article>
+        <article class="k glas s4 wp-karte" id="wp-karte" aria-label="Werbepartner"></article>
 
         <article class="k glas s5 kommentare">
           <h2>Neueste Kommentare <a href="https://www.instagram.com/badsalzuflennews.de/" target="_blank" rel="noopener">Instagram</a></h2>
@@ -552,6 +550,11 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
             <div>Bester Monat<b id="d-best">–</b></div>
           </div>
           <div class="diagramm" id="diagramm" role="img" aria-label="Säulendiagramm Umsatz je Monat"></div>
+        </article>
+
+        <article class="k glas s12 erin-unten">
+          <h2>Erinnerungen <span class="mehr" id="erin-stand">iCloud</span></h2>
+          <ul class="liste" id="l-erin"><li class="leer">wird geladen</li></ul>
         </article>
       </div>
     </section>
@@ -644,6 +647,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   document.getElementById("datum").textContent=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 })();
 </script>
-<script src="assets/js/dashboard.js?v=20261116a"></script>
+<script src="assets/js/werbepartner.js?v=20261117a"></script>
+<script src="assets/js/dashboard.js?v=20261117a"></script>
 </body>
 </html>
