@@ -88,6 +88,12 @@
         location.replace("anmelden.html");
         return new Promise(function () {});
       }
+      // Mitarbeiter haben hier nichts zu suchen (die Datenbank lässt sie ohnehin nicht rein)
+      var email = String(s.data.session.user.email || "").toLowerCase();
+      if (["schleef.lennart@gmail.com", "l.schleef@badsalzuflennews.de"].indexOf(email) < 0) {
+        location.replace("team.html");
+        return new Promise(function () {});
+      }
     }
     var quellen = await Promise.all([
       loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/" })

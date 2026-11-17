@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Team · ARTLENN MEDIA</title>
+<link rel="icon" href="assets/img/favicon-64.png">
+<!-- iPad/iPhone: als App auf dem Home-Bildschirm ohne schwarze Leiste oben;
+     das Hintergrundbild reicht bis unter Uhrzeit und Akku -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Team">
+<meta name="theme-color" content="#77736d">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<style>
+:root{
+  --glas: rgba(44,46,50,.5);
+  --glas-stark: rgba(40,42,46,.6);
+  --glas-hell: rgba(255,255,255,.1);
+  --rand: rgba(255,255,255,.16);
+  --rand-hell: rgba(255,255,255,.3);
+  --blau: #3B82F6;
+  --blau-hell: #7DB2FF;
+  --schrift: #F4F5F6;
+  --schrift-2: rgba(244,245,246,.72);
+  --schrift-3: rgba(244,245,246,.55);
+  --petrol: #7FCAC7;
+  --petrol-voll: #33A4A5;
+  --pink: #FA7C92;
+  --orange: #FE7F44;
+  --gelb: #FAD156;
+  --gruen: #A3CC91;
+  --blur: blur(34px) saturate(160%);
+  --radius: 26px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif;
+  color:var(--schrift);background:#14171b;font-size:15px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+/* Hintergrund: Platzhalter für ein echtes Foto (helles Wohnzimmer mit großem Fenster) */
+.hintergrund{position:fixed;inset:0;z-index:-1;overflow:hidden;background:linear-gradient(180deg,#b9b4ab 0%,#a19a8f 48%,#6f665b 70%,#4a433b 100%)}
+.hintergrund .fenster{position:absolute;left:4%;right:4%;top:-4%;height:62%;
+  background:
+    linear-gradient(90deg,transparent 0 24.4%,#6b655d 24.4% 25.2%,transparent 25.2% 49.6%,#6b655d 49.6% 50.4%,transparent 50.4% 74.8%,#6b655d 74.8% 75.6%,transparent 75.6%),
+    linear-gradient(180deg,#f4f6f7 0%,#e3e8ea 55%,#c9d0cc 80%,#9aa392 100%);
+  filter:blur(6px)}
+.hintergrund .boden{position:absolute;left:0;right:0;bottom:0;height:34%;background:linear-gradient(180deg,#8a7a68,#5c5045);filter:blur(4px)}
+.hintergrund .sofa{position:absolute;left:-4%;bottom:6%;width:46%;height:30%;border-radius:40px 40px 18px 18px;background:linear-gradient(180deg,#d8d2c7,#a99f91);filter:blur(10px)}
+.hintergrund .sofa2{position:absolute;right:-6%;bottom:4%;width:30%;height:26%;border-radius:40px;background:linear-gradient(180deg,#cfc7ba,#9b9182);filter:blur(10px)}
+.hintergrund .pflanze{position:absolute;left:2%;top:34%;width:12%;height:34%;border-radius:50%;background:radial-gradient(circle,#4f6a3e 0%,#3a5230 55%,transparent 72%);filter:blur(8px)}
+.hintergrund .lampe{position:absolute;right:16%;top:38%;width:8%;height:10%;border-radius:50%;background:radial-gradient(circle,#ffe7c2,transparent 70%);filter:blur(8px)}
+.hintergrund::after{content:"";position:absolute;inset:0;background:rgba(18,20,24,.18)}
+/* Eigenes Foto: liegt in assets/img/dashboard-hintergrund.jpg; fehlt es, bleibt das gemalte Wohnzimmer */
+.hintergrund .foto{position:absolute;inset:-8px;background:center/cover no-repeat;filter:blur(2px) saturate(115%);opacity:0;transition:opacity .6s ease}
+.hintergrund.mit-foto .foto{opacity:1}
+.hintergrund.mit-foto::after{background:rgba(18,20,24,.28)}
+
+.glas{background:var(--glas);border:1px solid var(--rand);border-radius:var(--radius);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1px rgba(255,255,255,.02), 0 24px 60px -24px rgba(0,0,0,.5)}
+
+.rahmen{display:grid;grid-template-columns:56px 1fr;gap:22px;padding:22px 28px 28px 18px;min-height:100vh;max-width:1560px;margin:0 auto}
+
+/* Leiste links: schwebende Pille, senkrecht mittig */
+.leiste{position:sticky;top:50vh;transform:translateY(-50%);align-self:start;margin-top:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;border-radius:999px}
+.leiste img{width:34px;height:34px;border-radius:50%;margin:2px 0 6px}
+.leiste button{width:40px;height:40px;border-radius:50%;border:0;background:transparent;color:var(--schrift-2);cursor:pointer;display:grid;place-items:center;transition:background .2s,color .2s}
+.leiste button:hover{background:var(--glas-hell);color:var(--schrift)}
+.leiste button[aria-current="true"]{background:rgba(255,255,255,.9);color:#1d2024}
+.leiste .unten{margin-top:6px}
+.leiste .ich,.ich-menue{display:none}
+svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* Kopf: Begrüßung links, Reiter als Pille in der Mitte, Suche rechts */
+.kopf{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:14px;margin-bottom:22px}
+.kopf .links{font-size:13px;color:var(--schrift-2)}
+.kopf .rechts{display:flex;justify-content:flex-end;align-items:center;gap:10px;min-width:0}
+.reiter{display:flex;gap:4px;padding:5px;border-radius:999px;overflow-x:auto;scrollbar-width:none}
+.reiter button{border:0;background:transparent;color:var(--schrift-2);font:inherit;font-size:13.5px;padding:8px 16px;border-radius:999px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:background .2s,color .2s}
+.reiter button svg.i{width:16px;height:16px}
+.reiter button:hover{color:var(--schrift)}
+.reiter button[aria-selected="true"]{background:rgba(255,255,255,.18);color:var(--schrift)}
+.rund{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--schrift-2);border:1px solid var(--rand);cursor:pointer}
+.suche{display:flex;align-items:center;gap:8px;background:var(--glas);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--rand);border-radius:999px;padding:9px 14px;color:var(--schrift-3);min-width:200px}
+.suche input{background:transparent;border:0;color:var(--schrift);font:inherit;font-size:14px;outline:none;width:100%}
+.suche input::placeholder{color:var(--schrift-3)}
+.person{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--petrol-voll),#2D7F81);display:grid;place-items:center;font-weight:600;font-size:14px;flex:none}
+
+.gruss h1{font-size:24px;font-weight:600;letter-spacing:-.02em;text-shadow:0 1px 12px rgba(0,0,0,.25)}
+.gruss p{color:var(--schrift-2);margin-top:1px;font-size:13.5px;text-shadow:0 1px 10px rgba(0,0,0,.3)}
+/* Läuft gerade: Glas-Pille oben rechts, gleiche Höhe wie die Reiter */
+.laeuft{display:flex;align-items:center;gap:8px;flex:0 1 350px;min-width:0;height:48px;padding:0 4px 0 8px;border-radius:999px;color:var(--schrift)}
+.laeuft-link{display:flex;align-items:center;gap:10px;flex:1;min-width:0;height:100%;color:inherit;text-decoration:none;border-radius:999px}
+.laeuft-link:hover .laeuft-titel{text-decoration:underline;text-underline-offset:2px}
+.laeuft-knopf{flex:none;display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:var(--schrift);cursor:pointer;transition:background .2s ease,transform .15s ease}
+.laeuft-knopf:hover{background:rgba(255,255,255,.22)}
+.laeuft-knopf:active{transform:scale(.94)}
+.laeuft-knopf svg.i{width:18px;height:18px}
+.laeuft-knopf[aria-pressed="true"]{background:rgba(255,255,255,.22);color:#fff}
+.laeuft-knopf.laedt svg.i{animation:laden 1s ease-in-out infinite}
+@keyframes laden{0%,100%{opacity:1}50%{opacity:.35}}
+.laeuft-wellen[hidden]{display:none}
+.laeuft-link:focus-visible,.laeuft-knopf:focus-visible,.laeuft-verbinden:focus-visible{outline:2px solid var(--blau-hell);outline-offset:2px}
+.laeuft[hidden],.laeuft-verbinden[hidden]{display:none}
+.laeuft-cover{position:relative;flex:none;width:32px;height:32px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.1);display:grid;place-items:center;color:var(--schrift-2)}
+.laeuft-cover svg.i{width:15px;height:15px}
+.laeuft-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.laeuft-text{display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2}
+.laeuft-titel{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.laeuft-wer{font-size:11.5px;color:var(--schrift-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.laeuft-wellen{flex:none;display:flex;align-items:flex-end;gap:2px;height:11px}
+.laeuft-wellen i{width:2.5px;height:100%;border-radius:2px;background:var(--gruen);transform-origin:bottom;animation:welle 1.1s ease-in-out infinite}
+.laeuft-wellen i:nth-child(2){animation-delay:-.4s}
+.laeuft-wellen i:nth-child(3){animation-delay:-.75s}
+@keyframes welle{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+@media (prefers-reduced-motion:reduce){.laeuft-wellen i{animation:none;transform:scaleY(.7)}}
+.laeuft-verbinden{flex:none;display:grid;place-items:center;width:48px;height:48px;padding:0;border-radius:50%;color:var(--schrift-2);font:inherit;font-size:13px;cursor:pointer}
+.laeuft-verbinden svg.i{width:17px;height:17px}
+.laeuft-verbinden span{display:none}
+.laeuft-verbinden:hover{color:var(--schrift)}
+.hinweis{font-size:12.5px;color:var(--schrift-3);border:1px solid var(--rand);border-radius:10px;padding:6px 10px}
+
+/* Raster */
+.raster{display:grid;grid-template-columns:repeat(12,1fr);gap:18px}
+.k{padding:20px}
+.k h2{font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.k h2 a,.mehr{font-size:13px;font-weight:500;color:var(--schrift-3);text-decoration:none}
+.k h2 a:hover{color:var(--schrift)}
+.s3{grid-column:span 3}.s4{grid-column:span 4}.s6{grid-column:span 6}.s5{grid-column:span 5}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+
+.zahl{transition:transform .25s cubic-bezier(.2,.8,.2,1),background .25s}
+.zahl:hover{transform:translateY(-4px);background:rgba(34,38,44,.5)}
+.zahl .oben{display:flex;justify-content:space-between;align-items:flex-start;color:var(--schrift-2);font-size:13.5px}
+.zahl .sym{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(74,222,128,.16);color:#86efac;border:1px solid rgba(134,239,172,.25)}
+.zahl .sym.b{background:rgba(59,130,246,.18);color:var(--blau-hell);border-color:rgba(125,178,255,.3)}
+.zahl .sym.o{background:rgba(254,127,68,.16);color:#ffb08a;border-color:rgba(255,176,138,.28)}
+.zahl .sym.p{background:rgba(250,124,146,.16);color:#ffb3c0;border-color:rgba(255,179,192,.28)}
+.zahl .wert{font-size:30px;font-weight:600;letter-spacing:-.02em;margin:14px 0 4px;font-variant-numeric:tabular-nums}
+.zahl .oben .klein{display:block;font-size:11.5px;color:var(--schrift-3);margin-top:1px}
+.zahl .unter{font-size:13px;color:var(--schrift-3)}
+.zahl .fuss{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.zahl svg.linie{width:92px;height:34px;flex:none;overflow:visible}
+.zahl svg.linie path{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.plus{color:var(--gruen)}.minus{color:var(--pink)}
+
+/* Diagramm */
+.diagramm{display:flex;align-items:flex-end;gap:14px;height:290px;padding-top:30px}
+.saeule{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;height:100%;justify-content:flex-end}
+.saeule span.b{width:100%;max-width:40px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,.18) 60%,rgba(255,255,255,.06) 100%);border:1px solid rgba(255,255,255,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.6);position:relative;transition:filter .2s}
+.saeule:hover span.b{filter:brightness(1.25)}
+.saeule.jetzt span.b{background:linear-gradient(180deg,#8fbcff 0%,var(--blau) 55%,#1d5fd6 100%);border-color:rgba(143,188,255,.8);box-shadow:0 0 36px -2px rgba(59,130,246,.75),inset 0 1px 0 rgba(255,255,255,.6)}
+.saeule small{font-size:12px;color:var(--schrift-3)}
+.saeule span.b em{position:absolute;top:-26px;left:50%;transform:translateX(-50%);font-style:normal;font-size:12px;color:var(--schrift);background:var(--glas-stark);border:1px solid var(--rand);padding:2px 7px;border-radius:7px;white-space:nowrap;opacity:0;transition:opacity .2s}
+.saeule:hover span.b em,.saeule.jetzt span.b em{opacity:1}
+.diagramm-kopf{display:flex;gap:28px;margin-bottom:6px}
+.diagramm-kopf div{font-size:13px;color:var(--schrift-3)}
+.diagramm-kopf b{display:block;font-size:20px;color:var(--schrift);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* Listen */
+.liste{list-style:none;display:flex;flex-direction:column}
+.liste li{display:flex;gap:12px;align-items:center;padding:10px 8px;border-radius:12px;transition:background .2s;cursor:pointer}
+.liste li:hover{background:var(--glas-hell)}
+.liste li+li{border-top:1px solid rgba(255,255,255,.06)}
+.liste .t{flex:1;min-width:0}
+.liste .t b{display:block;font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.liste .t small{display:block;color:var(--schrift-3);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.liste .r{font-size:13px;color:var(--schrift-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.punkt{width:8px;height:8px;border-radius:50%;flex:none}
+.zeit{width:52px;flex:none;font-size:13px;color:var(--schrift-2);font-variant-numeric:tabular-nums}
+.strich{width:3px;align-self:stretch;border-radius:3px;flex:none}
+.quelle{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:600;background:var(--glas-hell);border:1px solid var(--rand)}
+.stand{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--rand)}
+.stand.offen{color:var(--gelb);border-color:rgba(250,209,86,.35)}
+.stand.bezahlt{color:var(--gruen);border-color:rgba(163,204,145,.35)}
+.stand.ueber{color:var(--pink);border-color:rgba(250,124,146,.4)}
+
+/* Mail-Ansicht */
+.ansicht[hidden]{display:none}
+.mail{display:grid;grid-template-columns:330px 1fr;gap:18px;height:calc(100vh - 130px);min-height:520px}
+.mail .spalte{padding:16px;display:flex;flex-direction:column;min-height:0}
+.konten{display:flex;gap:6px;margin-bottom:12px}
+.konten button{flex:1;border:1px solid var(--rand);background:transparent;color:var(--schrift-2);font:inherit;font-size:13px;padding:7px;border-radius:10px;cursor:pointer}
+.konten button[aria-pressed="true"]{background:rgba(255,255,255,.14);color:var(--schrift)}
+.mails{overflow:auto;flex:1}
+.mails li{align-items:flex-start}
+.mails li[aria-current="true"]{background:rgba(255,255,255,.12)}
+.mails .neu b::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--petrol);margin-right:7px;vertical-align:1px}
+.lesen{padding:26px 30px;overflow:auto}
+.lesen .kopfzeile{display:flex;gap:14px;align-items:center;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:20px}
+.lesen h3{font-size:21px;font-weight:600;letter-spacing:-.01em;margin-bottom:16px}
+.lesen p{color:var(--schrift-2);max-width:64ch;margin-bottom:12px}
+.antwort{margin-top:26px;display:flex;gap:10px;align-items:center;background:var(--glas-hell);border:1px solid var(--rand);border-radius:14px;padding:10px 10px 10px 16px}
+.antwort input{flex:1;background:transparent;border:0;color:var(--schrift);font:inherit;outline:none}
+.antwort input::placeholder{color:var(--schrift-3)}
+.knopf{border:0;background:var(--schrift);color:#16191d;font:inherit;font-weight:600;font-size:14px;padding:9px 16px;border-radius:10px;cursor:pointer}
+
+.liste li.leer{color:var(--schrift-3);font-size:13.5px;cursor:default}
+.liste li.leer:hover{background:transparent}
+.liste a{color:inherit;text-decoration:none;display:contents}
+.lesen .text{white-space:pre-wrap;color:var(--schrift-2);max-width:72ch;overflow-wrap:anywhere}
+.lesen .anh{margin-top:16px;font-size:13px;color:var(--schrift-3)}
+.anh-bilder{display:grid;gap:12px;margin-top:16px}
+.anh-bild{margin:0;border:1px solid var(--rand);border-radius:14px;overflow:hidden;background:rgba(0,0,0,.25)}
+.anh-bild img{display:block;width:100%;max-height:520px;object-fit:contain}
+.anh-bild figcaption{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;font-size:13px;color:var(--schrift-3)}
+.anh-bild figcaption span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.anh-bild a{color:var(--schrift-2);flex:none}
+.knopf.link{display:inline-block;text-decoration:none;margin-top:22px}
+.mails .wenig{color:var(--schrift-3)}
+.kalender{padding:24px 28px}
+.kalender h3{font-size:14px;font-weight:600;color:var(--schrift-2);margin:20px 0 6px;text-transform:none}
+.kalender h3:first-child{margin-top:0}
+.aktien{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.aktien{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){.aktien{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.aktie{background:var(--glas-hell);border:1px solid var(--rand);border-radius:16px;padding:14px 14px 10px;display:flex;flex-direction:column;gap:2px;min-width:0;transition:background .2s,transform .25s cubic-bezier(.2,.8,.2,1)}
+.aktie:hover{background:rgba(255,255,255,.14);transform:translateY(-2px)}
+.aktie .n{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aktie .s{font-size:11.5px;color:var(--schrift-3)}
+.aktie .k{font-size:19px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;margin-top:6px;padding:0}
+.aktie .a{font-size:12.5px;font-variant-numeric:tabular-nums}
+.aktie svg{width:100%;height:30px;margin-top:6px;overflow:visible}
+.aktie svg path{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.leer-text{color:var(--schrift-3);font-size:13.5px}
+.ticker .wechselbar{transition:opacity .22s cubic-bezier(.2,.8,.2,1),transform .22s cubic-bezier(.2,.8,.2,1)}
+.ticker.aus .wechselbar{opacity:0;transform:translateY(5px)}
+.punkte{display:flex;gap:4px;margin-top:12px;align-items:center}
+.punkte button{width:6px;height:6px;border-radius:3px;border:0;padding:0;background:rgba(255,255,255,.25);cursor:pointer;transition:width .25s cubic-bezier(.2,.8,.2,1),background .25s}
+.punkte button:hover{background:rgba(255,255,255,.5)}
+.punkte button[aria-current="true"]{background:rgba(255,255,255,.85);width:16px}
+.mailkarte .liste li{padding:9px 8px}
+.schlagzeilen{display:flex;flex-direction:column}
+.schlagzeilen .wechselbar{transition:opacity .22s cubic-bezier(.2,.8,.2,1),transform .22s cubic-bezier(.2,.8,.2,1)}
+.schlagzeilen.aus .wechselbar{opacity:0;transform:translateY(5px)}
+.sz{flex:1;display:flex;flex-direction:column;gap:10px;color:inherit;text-decoration:none;border-radius:12px;padding:4px 2px}
+.sz:hover .sz-titel{text-decoration:underline;text-decoration-color:rgba(255,255,255,.35);text-underline-offset:3px}
+.sz-kopf{font-size:12.5px;color:var(--schrift-3);letter-spacing:.02em}
+.sz-kopf b{color:var(--schrift-2);font-weight:600}
+.sz-titel{font-size:18px;font-weight:600;line-height:1.35;letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.sz{flex:0 0 auto}
+.sz-danach{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);flex:1}
+.sz-label{display:block;font-size:11.5px;color:var(--schrift-3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+.sz-danach ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.sz-danach li{display:flex;gap:10px;align-items:flex-start;cursor:pointer;border-radius:10px;padding:6px;margin:0 -6px;transition:background .2s}
+.sz-danach li:hover{background:var(--glas-hell)}
+.sz-danach .q{flex:none;width:86px;white-space:nowrap;font-size:11px;font-weight:600;color:var(--schrift-2);margin-top:1px}
+.sz-danach .t{font-size:13px;color:var(--schrift-2);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sz-fuss{display:flex;align-items:center;gap:12px;margin-top:12px}
+.sz-fuss .punkte{margin-top:0;padding-top:0}
+.sz-fortschritt{flex:1;height:2px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.sz-fortschritt i{display:block;height:100%;width:100%;background:rgba(255,255,255,.55);transform-origin:left;transform:scaleX(0)}
+.sz-fortschritt i.lauf{animation:szlauf 7s linear forwards}
+.schlagzeilen.halt .sz-fortschritt i.lauf{animation-play-state:paused}
+@keyframes szlauf{to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.sz-fortschritt{display:none}}
+.wochekarte{display:flex;flex-direction:column}
+.woche{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));flex:1}
+.tag{padding:2px 8px 6px;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:180px;border-left:1px solid rgba(255,255,255,.09)}
+.tag:first-child{border-left:0;padding-left:0}
+.tag .tk{display:flex;flex-direction:column;align-items:flex-start;gap:4px;font-size:11.5px;color:var(--schrift-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.tag .tk b{font-size:20px;color:var(--schrift);font-weight:600;letter-spacing:-.01em;text-transform:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;margin-left:-6px}
+.tag.heute .tk{color:var(--blau-hell)}
+.tag.heute .tk b{background:var(--blau);color:#fff}
+.tag.wochenende .tk b{color:var(--schrift-2)}
+.termin{--f:#7DB2FF;font-size:12px;line-height:1.3;padding:5px 7px;border-radius:8px;min-width:0;background:color-mix(in srgb,var(--f) 22%,transparent);box-shadow:inset 2px 0 0 var(--f)}
+.termin small{display:block;color:var(--schrift-2);font-size:11px;font-variant-numeric:tabular-nums}
+.termin span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:anywhere}
+.tag .weitere{font-size:11px;color:var(--schrift-3);padding-left:7px}
+.tag .frei{font-size:11.5px;color:var(--schrift-3);margin:auto 0;text-align:center;opacity:.7}
+@media (max-width:900px){.woche{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:760px){.woche{grid-template-columns:1fr}.tag{min-height:0;border-left:0;padding:10px 0;border-top:1px solid rgba(255,255,255,.09)}.tag:first-child{border-top:0}}
+.profilbild{object-fit:cover;padding:0;border:1.5px solid rgba(255,255,255,.35)}
+.mailrahmen{margin-top:4px;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 10px 30px -12px rgba(0,0,0,.45)}
+.mailrahmen iframe{display:block;width:100%;height:240px;border:0;background:#fff}
+.aeltere{margin-top:8px;border:1px solid var(--rand);background:transparent;color:var(--schrift-2);font:inherit;font-size:13px;padding:9px;border-radius:10px;cursor:pointer;transition:background .2s}
+.aeltere:hover{background:var(--glas-hell)}
+.aeltere[disabled]{opacity:.5;cursor:default}
+.werkzeuge{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:-6px 0 16px}
+.werkzeuge button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rand);background:var(--glas-hell);color:var(--schrift-2);font:inherit;font-size:12.5px;padding:6px 10px;border-radius:9px;cursor:pointer;transition:background .2s,color .2s}
+.werkzeuge button:hover{background:rgba(255,255,255,.16);color:var(--schrift)}
+.werkzeuge button[disabled]{opacity:.5;cursor:default}
+.werkzeuge button svg.i{width:15px;height:15px}
+.werkzeug-meldung{font-size:12.5px;color:var(--schrift-3);margin-left:4px}
+.werkzeuge select{appearance:none;-webkit-appearance:none;border:1px solid var(--rand);background:var(--glas-hell) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23bbb' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center;color:var(--schrift-2);font:inherit;font-size:12.5px;padding:6px 28px 6px 10px;border-radius:9px;cursor:pointer}
+.werkzeuge select option{color:#111}
+.ordnerwahl{position:relative;display:flex;align-items:center;margin:0 0 12px}
+.ordnerwahl svg.i{position:absolute;left:11px;width:16px;height:16px;color:var(--schrift-2);pointer-events:none}
+.ordnerwahl select{width:100%;appearance:none;-webkit-appearance:none;border:1px solid var(--rand);background:var(--glas-hell) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23bbb' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;color:var(--schrift);font:inherit;font-size:13.5px;font-weight:500;padding:9px 32px 9px 36px;border-radius:10px;cursor:pointer;transition:border-color .2s}
+.ordnerwahl select:hover{border-color:var(--rand-hell)}
+.ordnerwahl option,.ordnerwahl optgroup{color:#111}
+.redaktion{display:flex;flex-direction:column;height:calc(100vh - 130px);min-height:560px;padding:14px;overflow:hidden}
+.redaktion-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 6px 12px}
+.redaktion-kopf h2{font-size:15px;font-weight:600}
+.redaktion-kopf a{font-size:13px;color:var(--schrift-3);text-decoration:none}
+.redaktion-kopf a:hover{color:var(--schrift)}
+.redaktion iframe{flex:1;width:100%;border:0;border-radius:14px;background:#fff}
+@media (max-width:760px){.redaktion{height:calc(100vh - 190px)}}
+/* Nachrichten-Reiter: Schlagzeilen dürfen umbrechen */
+.nachrichten .liste .t b{white-space:normal;overflow:visible;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.nachrichten .liste li{align-items:flex-start}
+.kommentare .liste li{align-items:flex-start}
+.kommentare .liste .t b{white-space:normal;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kommentare .vorschau{width:34px;height:34px;border-radius:10px;flex:none;object-fit:cover;background:var(--glas-hell);border:1px solid var(--rand)}
+.nachrichten h2 .mehr{font-weight:400}
+.platz{padding:60px 30px;text-align:center;color:var(--schrift-2)}
+
+:focus-visible{outline:2px solid var(--petrol);outline-offset:2px}
+
+/* iPad quer und Mac: Aufbau wie am großen Bildschirm, nur etwas kompakter */
+@media (max-width:1300px){
+  .rahmen{gap:16px;padding:18px 18px 22px 14px}
+  .raster{gap:14px}
+  .k{padding:16px}
+  .zahl .wert{font-size:26px}
+  .zahl svg.linie{width:70px}
+  .gruss h1{font-size:21px;white-space:nowrap}
+  .gruss p{white-space:nowrap}
+  .reiter button{padding:8px 12px}
+  .suche{min-width:150px}
+}
+/* Schmaler als iPad quer: Reiter ohne Symbole, damit alle hineinpassen */
+@media (max-width:1300px){.reiter button svg.i{display:none}.reiter button{padding:8px 11px}.suche{min-width:120px}}
+/* iPad hochkant und kleiner: zwei Kacheln nebeneinander */
+@media (max-width:900px){.s3{grid-column:span 6}.s4,.s5,.s6,.s7,.s8{grid-column:span 12}}
+@media (max-width:760px){
+  .rahmen{grid-template-columns:1fr;padding:12px;gap:12px}
+  /* Handy: Leiste unten wie bei Instagram – schwebende dunkle Glas-Pille, gewählter Bereich mit grauer Pille */
+  .leiste{position:fixed;top:auto;transform:none;bottom:calc(10px + env(safe-area-inset-bottom));left:14px;right:14px;height:auto;flex-direction:row;justify-content:space-between;align-items:center;gap:4px;
+    padding:6px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(20,22,26,.72);
+    -webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 12px 30px -10px rgba(0,0,0,.6);z-index:5}
+  .leiste button{width:auto;height:54px;flex:1;border-radius:999px;color:rgba(255,255,255,.92);transition:background .25s ease}
+  .leiste button svg.i{width:27px;height:27px;stroke-width:2}
+  .leiste button:hover{background:transparent}
+  .leiste button[aria-current="true"]{background:rgba(255,255,255,.17);color:#fff}
+  .leiste button[aria-current="true"] svg.i{stroke-width:2.5}
+  .leiste img,.leiste .unten{display:none}
+  /* Rechts: kleines rundes Profilbild wie bei Instagram, öffnet die übrigen Bereiche */
+  .leiste .ich{display:grid;place-items:center}
+  .leiste .ich img{display:block;width:34px;height:34px;margin:0;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,.35)}
+  .leiste .ich[aria-expanded="true"]{background:rgba(255,255,255,.17)}
+  .ich-menue{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:6;flex-direction:column;padding:6px;min-width:200px;border-radius:20px;background:rgba(20,22,26,.8)}
+  .ich-menue:not([hidden]){display:flex}
+  .ich-menue button{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#fff;font:inherit;font-size:15px;padding:12px 14px;border-radius:14px;cursor:pointer;text-align:left}
+  .ich-menue button:active{background:rgba(255,255,255,.12)}
+  /* Handy: unten nur Übersicht, E-Mails, Kalender, Nachrichten */
+  .leiste button[data-ziel="redaktion"],.leiste button[data-ziel="orbit"],.leiste button[data-ziel="whatsapp"]{display:none}
+  .suche{display:none}
+  .kopf{grid-template-columns:1fr auto}
+  .kopf .reiter{grid-column:1/-1;grid-row:2}
+  .kopf .rechts{display:contents}
+  .kopf .rechts .person{grid-column:2;grid-row:1}
+  .laeuft,.laeuft-verbinden{grid-column:1/-1;grid-row:3;flex:none;width:100%}
+  .laeuft-verbinden{display:flex;gap:8px;justify-content:center;border-radius:999px}
+  .laeuft-verbinden span{display:inline}
+  .laeuft:not([hidden])~.laeuft-verbinden,.laeuft-verbinden:has(~.laeuft:not([hidden])){grid-row:4}
+  .raster{gap:12px}
+  .s3{grid-column:span 12}
+  .gruss h1{font-size:24px}
+  .hinweis{display:none}
+  .mail{grid-template-columns:1fr;height:auto}
+  .lesen{display:none}
+  main{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+  .diagramm{gap:6px}
+  :root{--blur:blur(18px) saturate(140%)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* Abstand oben für Uhrzeit und Akku, wenn das Dashboard als App vom Home-Bildschirm läuft */
+@supports (padding-top:env(safe-area-inset-top)){
+  .rahmen{padding-top:calc(22px + env(safe-area-inset-top))}
+  @media (max-width:1300px){.rahmen{padding-top:calc(18px + env(safe-area-inset-top))}}
+  @media (max-width:760px){.rahmen{padding-top:calc(12px + env(safe-area-inset-top))}}
+}
+/* ---- Nur im Team-Dashboard ---- */
+.person.kuerzel{color:#fff}
+.vorschau-band{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 18px;padding:12px 16px;border-radius:16px;font-size:13.5px;color:var(--schrift-2)}
+.vorschau-band[hidden]{display:none}
+.vorschau-band a{color:var(--schrift);font-weight:600;text-decoration:none;border:1px solid var(--rand);border-radius:999px;padding:7px 14px;min-height:36px;display:inline-flex;align-items:center}
+.vorschau-band a:hover{background:var(--glas-hell)}
+/* Erinnerungen: Eingabe */
+.erin-form{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:end;margin-bottom:12px}
+.erin-form.kurz{grid-template-columns:minmax(0,1fr) auto;}
+.erin-form.kurz .feld.datum,.erin-form.kurz .feld.uhr{display:none}
+.feld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.feld span{font-size:12px;color:var(--schrift-2)}
+.feld input,.antwort-feld textarea{background:var(--glas-hell);border:1px solid var(--rand);border-radius:10px;color:var(--schrift);font:inherit;font-size:15px;min-height:44px;padding:0 12px;outline:none;color-scheme:dark;min-width:0}
+.feld input:focus,.antwort-feld textarea:focus{border-color:var(--rand-hell);box-shadow:0 0 0 3px rgba(125,178,255,.25)}
+.feld input::placeholder,.antwort-feld textarea::placeholder{color:var(--schrift-3)}
+.knopf{min-height:44px}
+.knopf[disabled]{opacity:.55;cursor:default}
+.knopf.leise{background:transparent;color:var(--schrift-2);border:1px solid var(--rand);font-weight:500}
+.knopf.leise:hover{color:var(--schrift);background:var(--glas-hell)}
+.erin-meldung{font-size:12.5px;color:var(--schrift-3);min-height:18px;margin:-4px 0 6px}
+.erin-meldung.fehler{color:var(--pink)}
+.erin li{cursor:default;align-items:center}
+.haken{flex:none;width:44px;height:44px;margin:-8px -6px -8px -10px;border:0;background:transparent;display:grid;place-items:center;cursor:pointer;color:var(--schrift-2)}
+.haken i{width:20px;height:20px;border-radius:50%;border:1.6px solid rgba(255,255,255,.45);display:grid;place-items:center;transition:background .2s ease,border-color .2s ease}
+.haken:hover i{border-color:#fff}
+.haken[aria-pressed="true"] i{background:var(--gruen);border-color:var(--gruen)}
+.haken[aria-pressed="true"] i::after{content:"";width:9px;height:5px;border:2px solid #16191d;border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+.erin li.erledigt .t b{text-decoration:line-through;color:var(--schrift-3)}
+.erin li.faellig .t small{color:var(--gelb)}
+.erin li.spaet .t small{color:var(--pink)}
+.weg{flex:none;width:40px;height:40px;border:0;border-radius:10px;background:transparent;color:var(--schrift-3);cursor:pointer;display:grid;place-items:center;opacity:.7}
+.weg:hover{background:var(--glas-hell);color:var(--schrift);opacity:1}
+.weg svg.i{width:17px;height:17px}
+.erin-gruppe{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--schrift-3);margin:18px 0 4px}
+.hinweis-zeile{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:9;padding:12px 18px;border-radius:16px;font-size:14px;max-width:min(92vw,460px);transition:opacity .25s ease,transform .25s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.hinweis-zeile.an{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+/* Mail: Antworten */
+.antwort-feld{margin-top:26px;display:flex;flex-direction:column;gap:8px}
+.antwort-feld label{font-size:13px;color:var(--schrift-2);font-weight:600}
+.antwort-feld textarea{min-height:130px;padding:10px 12px;resize:vertical;line-height:1.5}
+.antwort-fuss{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.antwort-fuss small{color:var(--schrift-3);font-size:12.5px}
+.antwort-meldung{font-size:13px;color:var(--schrift-2)}
+.antwort-meldung.fehler{color:var(--pink)}
+.antwort-meldung.ok{color:var(--gruen)}
+.beantwortet{font-size:11.5px;color:var(--schrift-3);margin-left:6px}
+.zurueck-mail{display:none}
+@media (max-width:760px){
+  .mail.offen .spalte{display:none}
+  .mail.offen .lesen{display:block;padding:18px}
+  .zurueck-mail{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:-6px 0 8px;border:0;background:transparent;color:var(--schrift-2);font:inherit;font-size:14px;cursor:pointer;padding:0}
+  .erin-form{grid-template-columns:1fr 1fr}
+  .erin-form .feld.titel{grid-column:1/-1}
+  .erin-form .knopf{grid-column:1/-1}
+  .erin-form.kurz{grid-template-columns:minmax(0,1fr) auto}
+  .erin-form.kurz .feld.titel{grid-column:auto}
+  .erin-form.kurz .knopf{grid-column:auto}
+}
+@media (max-width:760px){.leiste button[data-ziel="nachrichten"]{display:none}#mail-adresse{display:none}}
+</style>
+</head>
+<body>
+<div class="hintergrund" aria-hidden="true"><div class="fenster"></div><div class="boden"></div><div class="pflanze"></div><div class="lampe"></div><div class="sofa"></div><div class="sofa2"></div><div class="foto"></div></div>
+<script>
+(function(){
+  var bild = 'assets/img/dashboard-hintergrund.jpg?v=2';
+  var probe = new Image();
+  probe.onload = function(){
+    var h = document.querySelector('.hintergrund');
+    h.querySelector('.foto').style.backgroundImage = 'url("' + bild + '")';
+    h.classList.add('mit-foto');
+  };
+  probe.src = bild;
+})();
+</script>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-start" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></symbol>
+  <symbol id="i-kal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-news" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h10M7 17h6"/></symbol>
+  <symbol id="i-haken" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="i-raus" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></symbol>
+  <symbol id="i-auge" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-insta" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
+  <symbol id="i-papierkorb" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-zurueck" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-ordner" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-archiv" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/></symbol>
+  <symbol id="i-spam" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M12 8v5M12 16v.5"/></symbol>
+  <symbol id="i-punkt" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/></symbol>
+</svg>
+
+<div class="rahmen">
+  <nav class="leiste glas" aria-label="Hauptnavigation">
+    <button aria-current="true" data-ziel="start" aria-label="Übersicht"><svg class="i"><use href="#i-start"/></svg></button>
+    <button data-ziel="mail" aria-label="E-Mails"><svg class="i"><use href="#i-mail"/></svg></button>
+    <button data-ziel="kalender" aria-label="Kalender"><svg class="i"><use href="#i-kal"/></svg></button>
+    <button data-ziel="erinnerungen" aria-label="Erinnerungen"><svg class="i"><use href="#i-haken"/></svg></button>
+    <button data-ziel="nachrichten" aria-label="Nachrichten"><svg class="i"><use href="#i-news"/></svg></button>
+    <button class="ich" id="ich" aria-label="Mehr: Abmelden" aria-haspopup="true" aria-expanded="false"><span class="person kuerzel" id="ich-kuerzel" style="width:34px;height:34px;font-size:13px">L</span></button>
+    <button class="unten" id="abmelden" aria-label="Abmelden" title="Abmelden"><svg class="i"><use href="#i-raus"/></svg></button>
+  </nav>
+  <div class="ich-menue glas" id="ich-menue" hidden>
+    <button data-ziel="nachrichten"><svg class="i"><use href="#i-news"/></svg>Nachrichten</button>
+    <button id="ich-raus"><svg class="i"><use href="#i-raus"/></svg>Abmelden</button>
+  </div>
+
+  <main>
+    <header class="kopf">
+      <div class="gruss"><div><h1 id="gruss">Guten Tag</h1><p id="datum"></p></div></div>
+      <div class="reiter glas" role="tablist">
+        <button role="tab" aria-selected="true" data-ziel="start"><svg class="i"><use href="#i-start"/></svg>Übersicht</button>
+        <button role="tab" data-ziel="mail"><svg class="i"><use href="#i-mail"/></svg>E-Mails</button>
+        <button role="tab" data-ziel="kalender"><svg class="i"><use href="#i-kal"/></svg>Kalender</button>
+        <button role="tab" data-ziel="erinnerungen"><svg class="i"><use href="#i-haken"/></svg>Erinnerungen</button>
+        <button role="tab" data-ziel="nachrichten"><svg class="i"><use href="#i-news"/></svg>Nachrichten</button>
+      </div>
+      <div class="rechts">
+        <span class="person kuerzel" id="kuerzel" aria-hidden="true">L</span>
+      </div>
+    </header>
+
+    <div class="vorschau-band glas" id="vorschau" hidden>
+      <span>Vorschau: So sieht das Dashboard deines Mitarbeiters aus. Erinnerungen und Antworten, die du hier machst, gelten für ihn.</span>
+      <a href="dashboard.html">Zu deinem Dashboard</a>
+    </div>
+
+    <!-- ÜBERSICHT -->
+    <section class="ansicht" data-ansicht="start">
+      <div class="raster">
+        <article class="k glas zahl s4">
+          <div class="oben"><span>Instagram <span class="klein" id="ig-name">@badsalzuflennews.de</span></span><span class="sym p"><svg class="i"><use href="#i-insta"/></svg></span></div>
+          <div class="fuss"><div><div class="wert" id="z-ig">–</div><div class="unter" id="z-ig-u">wird geladen</div></div></div>
+        </article>
+        <article class="k glas zahl s4">
+          <div class="oben"><span>Instagram-Aufrufe <span class="klein">letzte 30 Tage</span></span><span class="sym o"><svg class="i"><use href="#i-play"/></svg></span></div>
+          <div class="fuss"><div><div class="wert" id="z-igv">–</div><div class="unter" id="z-igv-u">wird geladen</div></div>
+          <svg class="linie" viewBox="0 0 92 34" role="img" aria-label="Reichweite je Tag"><path id="l-ig" d="" stroke="#ffb08a"/></svg></div>
+        </article>
+        <article class="k glas zahl s4">
+          <div class="oben"><span>Aufrufe heute <span class="klein">Bad Salzuflen News</span></span><span class="sym b"><svg class="i"><use href="#i-auge"/></svg></span></div>
+          <div class="fuss"><div><div class="wert" id="z-aufrufe">–</div><div class="unter" id="z-aufrufe-u">wird geladen</div></div>
+          <svg class="linie" viewBox="0 0 92 34" role="img"><path id="l-aufrufe" d="" stroke="#7DB2FF"/></svg></div>
+        </article>
+
+        <article class="k glas s8 mailkarte">
+          <h2><span>E-Mails <span class="mehr" id="mail-adresse"></span></span> <a href="#" data-ziel="mail" id="mail-zahl">Alle ansehen</a></h2>
+          <ul class="liste" id="mails-kurz"><li class="leer">wird geladen</li></ul>
+        </article>
+
+        <article class="k glas s4">
+          <h2>Erinnerungen <a href="#" data-ziel="erinnerungen" id="erin-zahl">Alle</a></h2>
+          <form class="erin-form kurz" data-erin-form novalidate>
+            <label class="feld titel"><span>Neue Erinnerung</span><input name="titel" type="text" maxlength="200" autocomplete="off" placeholder="z. B. Fotos vom Stadtfest sichten"></label>
+            <label class="feld datum"><span>Datum</span><input name="datum" type="date"></label>
+            <label class="feld uhr"><span>Uhrzeit</span><input name="uhrzeit" type="time"></label>
+            <button class="knopf" type="submit">Hinzufügen</button>
+          </form>
+          <p class="erin-meldung" data-erin-meldung aria-live="polite"></p>
+          <ul class="liste erin" id="erin-kurz"><li class="leer">wird geladen</li></ul>
+        </article>
+
+        <article class="k glas s8 wochekarte">
+          <h2>Diese Woche <a href="#" data-ziel="kalender">Kalender Bad Salzuflen News</a></h2>
+          <div class="woche" id="woche"><p class="leer-text">wird geladen</p></div>
+        </article>
+
+        <article class="k glas s4 schlagzeilen" id="sz-karte">
+          <h2>Schlagzeilen <span class="mehr">Bad Salzuflen News · Tagesschau</span></h2>
+          <a class="sz wechselbar" id="sz-link" href="#" target="_blank" rel="noopener">
+            <span class="sz-kopf" id="sz-kopf">wird geladen</span>
+            <span class="sz-titel" id="sz-titel"></span>
+          </a>
+          <div class="sz-danach">
+            <ul id="sz-danach" aria-label="Nächste Schlagzeilen"></ul>
+          </div>
+          <div class="sz-fuss">
+            <div class="punkte" id="sz-punkte" aria-label="Schlagzeile auswählen"></div>
+            <div class="sz-fortschritt" aria-hidden="true"><i id="sz-balken"></i></div>
+          </div>
+        </article>
+
+        <article class="k glas s6">
+          <h2>Bad Salzuflen <a href="https://badsalzuflennews.de" target="_blank" rel="noopener">badsalzuflennews.de</a></h2>
+          <ul class="liste" id="l-bs"><li class="leer">wird geladen</li></ul>
+        </article>
+
+        <article class="k glas s6">
+          <h2>Welt <a href="https://www.tagesschau.de" target="_blank" rel="noopener">tagesschau.de</a></h2>
+          <ul class="liste" id="l-welt"><li class="leer">wird geladen</li></ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- E-MAILS -->
+    <section class="ansicht" data-ansicht="mail" hidden>
+      <div class="mail" id="mail-bereich">
+        <div class="spalte glas">
+          <label class="ordnerwahl">
+            <svg class="i" aria-hidden="true"><use href="#i-ordner"/></svg>
+            <select id="ordner-wahl" aria-label="Ordner">
+              <option value="inbox" selected>Posteingang</option>
+              <option value="sent">Gesendet</option>
+              <option value="archive">Archiv</option>
+              <option value="junk">Spam</option>
+              <option value="trash">Papierkorb</option>
+            </select>
+          </label>
+          <ul class="liste mails" id="mails-lang"><li class="leer">wird geladen</li></ul>
+          <button type="button" class="aeltere" id="aeltere" hidden>Ältere Mails laden</button>
+        </div>
+        <div class="lesen glas" id="lesen"><p class="platz">Links eine Mail auswählen.</p></div>
+      </div>
+    </section>
+
+    <section class="ansicht" data-ansicht="kalender" hidden>
+      <div class="glas k kalender" id="kal-liste"><p class="platz">wird geladen</p></div>
+    </section>
+
+    <section class="ansicht" data-ansicht="erinnerungen" hidden>
+      <div class="glas k kalender">
+        <form class="erin-form" data-erin-form novalidate>
+          <label class="feld titel"><span>Neue Erinnerung</span><input name="titel" type="text" maxlength="200" autocomplete="off" placeholder="Was steht an?"></label>
+          <label class="feld datum"><span>Datum (optional)</span><input name="datum" type="date"></label>
+          <label class="feld uhr"><span>Uhrzeit (optional)</span><input name="uhrzeit" type="time"></label>
+          <button class="knopf" type="submit">Hinzufügen</button>
+        </form>
+        <p class="erin-meldung" data-erin-meldung aria-live="polite"></p>
+        <div id="erin-lang"><p class="platz">wird geladen</p></div>
+      </div>
+    </section>
+
+    <section class="ansicht" data-ansicht="nachrichten" hidden>
+      <div class="raster nachrichten">
+        <article class="k glas s12">
+          <h2>Nachrichten <span class="mehr">Bad Salzuflen News · Tagesschau · neueste oben</span></h2>
+          <ul class="liste" id="n-alle"><li class="leer">wird geladen</li></ul>
+        </article>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="hinweis-zeile glas" id="hinweis" role="status" aria-live="polite"></div>
+
+<script src="assets/js/vendor/supabase.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/team.js?v=20261117a"></script>
+</body>
+</html>

@@ -985,6 +985,8 @@
 
   sb.auth.getSession().then(function (r) {
     if (!r.data.session) { location.replace("anmelden.html"); return; }
+    var email = String(r.data.session.user.email || "").toLowerCase();
+    if (["schleef.lennart@gmail.com", "l.schleef@badsalzuflennews.de"].indexOf(email) < 0) { location.replace("team.html"); return; }
     kontenLaden();
     aktienLaden();
     aufrufeLaden();
