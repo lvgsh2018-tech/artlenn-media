@@ -975,6 +975,7 @@
     var z = e.target.closest('[data-ziel="mail"]');
     if (z && !KONTEN.ansicht && KONTEN.liste.length) ordnerLaden(true);
     if (z && !KONTEN.eigene && KONTEN.liste.length) eigeneOrdnerLaden();
+    if (e.target.closest('[data-ziel="instagram"]') && window.AM_IG) window.AM_IG.start(wpAbruf, $("ig-bereich"));
   });
   $("mails-lang").addEventListener("click", function (e) { var li = e.target.closest("[data-mail]"); if (li) mailOeffnen(+li.dataset.mail); });
   $("mails-kurz").addEventListener("click", function (e) {
@@ -1030,6 +1031,7 @@
     aufrufeLaden();
     instagramLaden();
     kommentareLaden();
+    if (window.AM_IG && !$("ig-bereich").closest(".ansicht").hidden) window.AM_IG.neu();
     schlagzeilenLaden();
     if (window.AM_WP) window.AM_WP.neu();
     badSalzuflen();

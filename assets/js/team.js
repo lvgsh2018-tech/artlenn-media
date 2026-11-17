@@ -63,6 +63,7 @@
     document.querySelectorAll(".reiter button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.ziel === ziel); });
     document.querySelectorAll(".leiste button[data-ziel]").forEach(function (b) { b.setAttribute("aria-current", b.dataset.ziel === ziel); });
     if (ziel === "mail" && !MAIL.geladen) ordnerLaden(true);
+    if (ziel === "instagram" && window.AM_IG) window.AM_IG.start(abruf, $("ig-bereich"));
     window.scrollTo(0, 0);
   }
   var ich = $("ich"), menue = $("ich-menue");
@@ -688,6 +689,7 @@
     if (window.AM_WP) window.AM_WP.neu();
     aufrufeLaden();
     instagramLaden();
+    if (window.AM_IG && !$("ig-bereich").closest(".ansicht").hidden) window.AM_IG.neu();
     badSalzuflen();
     welt();
     boulevard();

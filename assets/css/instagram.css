@@ -1,0 +1,95 @@
+/* Reiter „Instagram“ im Team-Dashboard */
+.ig-kopfzeile{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 4px 14px;color:var(--schrift-2);font-size:13.5px;text-shadow:0 1px 10px rgba(0,0,0,.3)}
+.ig-neu{white-space:nowrap;flex:none;border:1px solid var(--rand);background:var(--glas);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);color:var(--schrift);font:inherit;font-size:13px;padding:7px 14px;border-radius:999px;cursor:pointer;transition:background .2s}
+.ig-neu:hover{background:rgba(255,255,255,.16)}
+.ig-neu:disabled{color:var(--schrift-3);cursor:default}
+.ig-neu:focus-visible,.ig-sortierung button:focus-visible,.ig-beitraege a:focus-visible,.ig-kommentare a:focus-visible{outline:2px solid var(--blau-hell);outline-offset:2px}
+
+.ig-kacheln{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px;margin-bottom:18px}
+.ig-kachel{display:flex;flex-direction:column;gap:4px;padding:18px}
+.ig-name{font-size:13px;color:var(--schrift-2)}
+.ig-wert{font-size:28px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:6px}
+.ig-unter{font-size:12.5px;color:var(--schrift-3);line-height:1.35}
+.ig-ruhig{color:var(--schrift-3)}
+
+.ig-leer{color:var(--schrift-3);font-size:13.5px;padding:8px 0;list-style:none}
+.ig-fuss{color:var(--schrift-3);font-size:12.5px;margin-top:14px}
+
+/* Verlauf */
+.ig-verlauf{position:relative;height:250px;padding-left:58px}
+.ig-verlauf svg{display:block;width:100%;height:220px;overflow:visible;touch-action:pan-y;cursor:crosshair}
+.ig-gitter{stroke:rgba(255,255,255,.09);stroke-width:1;vector-effect:non-scaling-stroke}
+.ig-strich{fill:none;stroke:#7DB2FF;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.ig-faden{stroke:rgba(255,255,255,.35);stroke-width:1;vector-effect:non-scaling-stroke}
+.ig-achse-y{position:absolute;left:0;top:0;width:52px;height:220px}
+.ig-achse-y span{position:absolute;left:0;transform:translateY(-50%);font-size:11.5px;color:var(--schrift-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ig-achse-x{position:relative;height:22px;margin-top:4px}
+.ig-achse-x span{position:absolute;top:0;font-size:11.5px;color:var(--schrift-3);white-space:nowrap;transform:translateX(-50%)}
+.ig-achse-x span.a{transform:none}.ig-achse-x span.e{transform:translateX(-100%)}
+.ig-punkt{position:absolute;width:10px;height:10px;margin:-5px 0 0 53px;border-radius:50%;background:#7DB2FF;box-shadow:0 0 0 2px rgba(20,22,26,.9);pointer-events:none}
+.ig-tipp{position:absolute;margin-left:58px;padding:8px 11px;border-radius:12px;font-size:12.5px;color:var(--schrift-2);white-space:nowrap;pointer-events:none;background:var(--glas-stark)}
+.ig-tipp small{display:block;color:var(--schrift-3);font-size:11.5px}
+.ig-tipp b{color:var(--schrift);font-size:15px;font-weight:600;margin-right:4px;font-variant-numeric:tabular-nums}
+
+/* waagerechte Balken */
+.ig-balken{list-style:none;display:flex;flex-direction:column;gap:12px}
+.ig-balken li{display:grid;grid-template-columns:1fr auto;row-gap:6px;font-size:13.5px}
+.ig-b-name{color:var(--schrift-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ig-b-wert{font-variant-numeric:tabular-nums;font-weight:500}
+.ig-b-spur{grid-column:1/-1;height:6px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden}
+.ig-b-spur i{display:block;height:100%;border-radius:999px;background:#7DB2FF}
+
+/* Alter */
+.ig-alter{display:flex;align-items:flex-end;gap:10px;height:170px}
+.ig-a{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;min-width:0}
+.ig-a-saeule{width:100%;max-width:38px;flex:1;display:flex;align-items:flex-end}
+.ig-a-saeule i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:#7DB2FF}
+.ig-a-wert{font-size:12px;font-variant-numeric:tabular-nums}
+.ig-a small{font-size:11.5px;color:var(--schrift-3);white-space:nowrap}
+.ig-geschlecht{margin-top:22px}
+.ig-g-spur{display:flex;gap:2px;height:10px;border-radius:999px;overflow:hidden}
+.ig-g-spur i{display:block}
+.g-F{background:#FFB08A}.g-M{background:#7DB2FF}.g-U{background:rgba(255,255,255,.3)}
+.ig-g-legende{list-style:none;display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:13px;color:var(--schrift-2)}
+.ig-g-legende li{display:flex;align-items:center;gap:7px}
+.ig-g-legende span{width:9px;height:9px;border-radius:50%}
+.ig-g-legende b{color:var(--schrift);font-weight:500;font-variant-numeric:tabular-nums}
+
+/* Beiträge */
+.ig-sortierung{display:flex;gap:2px;background:rgba(255,255,255,.06);border-radius:999px;padding:3px}
+.ig-sortierung button{border:0;background:transparent;color:var(--schrift-3);font:inherit;font-size:12.5px;font-weight:500;padding:5px 11px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s}
+.ig-sortierung button:hover{color:var(--schrift)}
+.ig-sortierung button[aria-pressed="true"]{background:rgba(255,255,255,.18);color:var(--schrift)}
+.ig-beitraege{list-style:none;display:flex;flex-direction:column}
+.ig-beitraege li+li{border-top:1px solid rgba(255,255,255,.06)}
+.ig-beitraege a{display:flex;align-items:center;gap:12px;padding:9px 8px;border-radius:12px;color:inherit;text-decoration:none;transition:background .2s}
+.ig-beitraege a:hover{background:var(--glas-hell)}
+.ig-platz{width:16px;flex:none;text-align:right;font-size:12.5px;color:var(--schrift-3);font-variant-numeric:tabular-nums}
+.ig-bild{width:46px;height:46px;flex:none;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.08)}
+.ig-bild img{width:100%;height:100%;object-fit:cover;display:block}
+.ig-text{flex:1;min-width:0}
+.ig-text b{display:block;font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ig-text small{display:block;color:var(--schrift-3);font-size:12.5px}
+.ig-zahlen{display:grid;grid-template-columns:repeat(4,64px);gap:6px;flex:none;text-align:right}
+.ig-zahlen span{display:flex;flex-direction:column;font-size:11px;color:var(--schrift-3)}
+.ig-zahlen b{font-size:14px;font-weight:500;color:var(--schrift-2);font-variant-numeric:tabular-nums}
+.ig-zahlen span.an b{color:var(--schrift);font-weight:600}
+
+.ig-kommentare a{display:flex;gap:12px;align-items:center;width:100%;color:inherit;text-decoration:none}
+.ig-kommentare .t small{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+@media (max-width:1300px){.ig-kacheln{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:900px){.ig-zahlen{grid-template-columns:repeat(4,52px)}}
+@media (max-width:760px){
+  .ig-kacheln{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .ig-kachel{padding:14px}.ig-wert{font-size:23px}
+  .ig-beitraege a{flex-wrap:wrap}
+  .ig-zahlen{width:100%;grid-template-columns:repeat(4,minmax(0,1fr));padding-left:28px;text-align:left}
+  .ig-sortierung{overflow-x:auto}
+  .k h2:has(.ig-sortierung){flex-wrap:wrap}
+  .ig-verlauf{padding-left:52px}.ig-achse-y{width:48px}.ig-punkt{margin-left:47px}.ig-tipp{margin-left:52px}
+}
+
+/* Verweis auf der Übersichtskachel */
+.ig-alle{display:inline-block;margin-top:6px;font-size:13px;color:var(--schrift-3);text-decoration:none;white-space:nowrap}
+.ig-alle:hover{color:var(--schrift)}

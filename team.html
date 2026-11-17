@@ -15,6 +15,7 @@
 <meta name="theme-color" content="#77736d">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="stylesheet" href="assets/css/werbepartner.css?v=20261117a">
+<link rel="stylesheet" href="assets/css/instagram.css?v=20261117a">
 <style>
 :root{
   --glas: rgba(44,46,50,.5);
@@ -492,6 +493,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 <div class="rahmen">
   <nav class="leiste glas" aria-label="Hauptnavigation">
     <button aria-current="true" data-ziel="start" aria-label="Übersicht"><svg class="i"><use href="#i-start"/></svg></button>
+    <button data-ziel="instagram" aria-label="Instagram"><svg class="i"><use href="#i-insta"/></svg></button>
     <button data-ziel="mail" aria-label="E-Mails"><svg class="i"><use href="#i-mail"/></svg></button>
     <button data-ziel="kalender" aria-label="Kalender"><svg class="i"><use href="#i-kal"/></svg></button>
     <button data-ziel="erinnerungen" aria-label="Erinnerungen"><svg class="i"><use href="#i-haken"/></svg></button>
@@ -509,6 +511,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
       <div class="gruss"><div><h1 id="gruss">Guten Tag</h1><p id="datum"></p></div></div>
       <div class="reiter glas" role="tablist">
         <button role="tab" aria-selected="true" data-ziel="start"><svg class="i"><use href="#i-start"/></svg>Übersicht</button>
+        <button role="tab" data-ziel="instagram"><svg class="i"><use href="#i-insta"/></svg>Instagram</button>
         <button role="tab" data-ziel="mail"><svg class="i"><use href="#i-mail"/></svg>E-Mails</button>
         <button role="tab" data-ziel="kalender"><svg class="i"><use href="#i-kal"/></svg>Kalender</button>
         <button role="tab" data-ziel="erinnerungen"><svg class="i"><use href="#i-haken"/></svg>Erinnerungen</button>
@@ -529,7 +532,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
       <div class="raster">
         <article class="k glas zahl s4">
           <div class="oben"><span>Instagram <span class="klein" id="ig-name">@badsalzuflennews.de</span></span><span class="sym p"><svg class="i"><use href="#i-insta"/></svg></span></div>
-          <div class="fuss"><div><div class="wert" id="z-ig">–</div><div class="unter" id="z-ig-u">wird geladen</div></div></div>
+          <div class="fuss"><div><div class="wert" id="z-ig">–</div><div class="unter" id="z-ig-u">wird geladen</div></div><a href="#" class="ig-alle" data-ziel="instagram">Alle Zahlen</a></div>
         </article>
         <article class="k glas zahl s4">
           <div class="oben"><span>Instagram-Aufrufe <span class="klein">letzte 30 Tage</span></span><span class="sym o"><svg class="i"><use href="#i-play"/></svg></span></div>
@@ -593,6 +596,11 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
       </div>
     </section>
 
+    <!-- INSTAGRAM -->
+    <section class="ansicht" data-ansicht="instagram" hidden>
+      <div id="ig-bereich"></div>
+    </section>
+
     <!-- E-MAILS -->
     <section class="ansicht" data-ansicht="mail" hidden>
       <div class="mail" id="mail-bereich">
@@ -648,6 +656,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 <script src="assets/js/vendor/supabase.min.js"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/werbepartner.js?v=20261117b"></script>
-<script src="assets/js/team.js?v=20261117g"></script>
+<script src="assets/js/instagram.js?v=20261117a"></script>
+<script src="assets/js/team.js?v=20261117h"></script>
 </body>
 </html>
