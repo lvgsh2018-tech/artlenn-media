@@ -1105,7 +1105,7 @@
     });
   });
 
-  // Abruf für die Werbepartner-Kachel (assets/js/werbepartner.js)
+  // Abruf für die Werbepartner-Kachel (assets/js/kontaktliste.js)
   async function wpAbruf(body) {
     var r;
     try { r = await sb.functions.invoke("dashboard-konten", { body: body }); }

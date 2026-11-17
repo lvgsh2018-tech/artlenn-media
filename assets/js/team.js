@@ -679,8 +679,6 @@
   sb.auth.getSession().then(function (r) {
     if (!r.data.session) { location.replace("anmelden.html"); return; }
     var email = String(r.data.session.user.email || "").toLowerCase();
-    var k = (email.charAt(0) || "T").toUpperCase();
-    $("kuerzel").textContent = k; $("ich-kuerzel").textContent = k;
     if (CHEFS.indexOf(email) >= 0) $("vorschau").hidden = false;
     uebersichtLaden();
     aufrufeLaden();
