@@ -262,7 +262,7 @@
     var rest = (d.anhaenge || []).filter(function (n) { var k = gezeigt.indexOf(n); if (k < 0) return true; gezeigt.splice(k, 1); return false; });
     var antwort = m.art === "sent" ? "" :
       '<form class="antwort-feld" data-antwort novalidate><label for="antwort-text">Antwort an ' + esc(d.antwortAn || m.vonAdresse) + '</label>' +
-      '<textarea id="antwort-text" name="text" placeholder="Guten Tag …" required></textarea>' +
+      '<textarea id="antwort-text" name="text" placeholder="Guten Tag …" required></textarea>' + anhangBlock() +
       '<div class="antwort-fuss"><button class="knopf" type="submit">Antwort senden</button><small>Geht von ' + esc(MAIL.postfach) + ' raus, mit deiner Signatur, die ursprüngliche Mail wird angehängt.</small>' +
       '<span class="antwort-meldung" aria-live="polite"></span></div></form>';
     var fuss = (bilder ? '<div class="anh-bilder">' + bilder + "</div>" : "") + (rest.length ? '<p class="anh">Anhänge: ' + esc(rest.join(", ")) + "</p>" : "") + antwort;
@@ -270,6 +270,51 @@
     $("lesen").innerHTML = kopf + '<div class="mailrahmen"></div>' + fuss;
     mailGestaltet($("lesen").querySelector(".mailrahmen"), d.html);
   }
+
+  /* Anhänge: Dateien im Browser lesen und als Text (base64) mitschicken, zusammen höchstens 15 MB */
+  var ANH_MAX = 15 * 1024 * 1024;
+  function anhangBlock() {
+    return '<div class="anh-zeile"><button type="button" class="knopf leise" data-anhang-wahl><svg class="i" aria-hidden="true"><use href="#i-klammer"/></svg>Datei anhängen</button>' +
+      '<input type="file" multiple hidden data-anhang-datei><span class="anh-liste"></span></div>';
+  }
+  function groesse(n) { return n >= 1048576 ? (n / 1048576).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; }
+  function anhListe(f) {
+    f.querySelector(".anh-liste").innerHTML = (f._anh || []).map(function (a, i) {
+      return '<span class="anh-chip"><span title="' + esc(a.name) + '">' + esc(a.name) + " · " + groesse(a.groesse) + '</span><button type="button" data-anhang-weg="' + i + '" aria-label="' + esc(a.name) + ' entfernen">×</button></span>';
+    }).join("");
+  }
+  function dateiLesen(datei) {
+    return new Promise(function (ok, fehl) {
+      var r = new FileReader();
+      r.onload = function () { var t = String(r.result); ok(t.slice(t.indexOf(",") + 1)); };
+      r.onerror = fehl;
+      r.readAsDataURL(datei);
+    });
+  }
+  function anhangDaten(f) { return (f._anh || []).map(function (a) { return { name: a.name, typ: a.typ, inhalt: a.inhalt }; }); }
+  $("lesen").addEventListener("click", function (e) {
+    var w = e.target.closest("[data-anhang-wahl]");
+    if (w) { w.closest("form").querySelector("[data-anhang-datei]").click(); return; }
+    var x = e.target.closest("[data-anhang-weg]");
+    if (x) { var f = x.closest("form"); f._anh.splice(+x.dataset.anhangWeg, 1); anhListe(f); }
+  });
+  $("lesen").addEventListener("change", async function (e) {
+    var inp = e.target.closest("[data-anhang-datei]"); if (!inp) return;
+    var f = inp.closest("form"), meldung = f.querySelector(".antwort-meldung");
+    f._anh = f._anh || [];
+    var summe = f._anh.reduce(function (n, a) { return n + a.groesse; }, 0), zuGross = [];
+    meldung.className = "antwort-meldung"; meldung.textContent = "Dateien werden gelesen …";
+    for (var i = 0; i < inp.files.length; i++) {
+      var d = inp.files[i];
+      if (f._anh.length >= 10 || summe + d.size > ANH_MAX) { zuGross.push(d.name); continue; }
+      try { f._anh.push({ name: d.name, typ: d.type || "application/octet-stream", groesse: d.size, inhalt: await dateiLesen(d) }); summe += d.size; }
+      catch (_) { zuGross.push(d.name); }
+    }
+    inp.value = "";
+    anhListe(f);
+    meldung.textContent = zuGross.length ? "Nicht angehängt (zusammen höchstens 15 MB und 10 Dateien): " + zuGross.join(", ") : "";
+    if (zuGross.length) meldung.classList.add("fehler");
+  });
 
   /* Neue Mail von seiner Adresse schreiben */
   function neueMail() {
@@ -283,7 +328,7 @@
       '<p class="hilfe" style="margin-top:-8px">Mehrere Empfänger mit Komma trennen.</p>' +
       '<label class="feld"><span>Betreff</span><input name="betreff" type="text" maxlength="300" autocomplete="off"></label>' +
       '<div class="antwort-feld"><label for="neu-text">Text</label><textarea id="neu-text" name="text" placeholder="Guten Tag …"></textarea></div>' +
-      (PERSON ? '<p class="hilfe" style="margin-top:-6px">' + esc(sigHinweis()) + "</p>" : "") +
+      (PERSON ? '<p class="hilfe" style="margin-top:-6px">' + esc(sigHinweis()) + "</p>" : "") + anhangBlock() +
       '<div class="antwort-fuss"><button class="knopf" type="submit">Senden</button><button class="knopf leise" type="button" data-verwerfen>Verwerfen</button>' +
       '<span class="antwort-meldung" aria-live="polite"></span></div></form>';
     $("lesen").querySelector('[name="an"]').focus();
@@ -305,7 +350,7 @@
       : !f.text.value.trim() ? [f.text, "Bitte zuerst einen Text schreiben."] : null;
     if (fehlt) { meldung.textContent = fehlt[1]; meldung.classList.add("fehler"); fehlt[0].focus(); return; }
     knopf.disabled = true; knopf.textContent = "Wird gesendet …"; meldung.textContent = "";
-    var d = await abruf({ aktion: "team-neu", an: f.an.value, betreff: f.betreff.value, text: f.text.value });
+    var d = await abruf({ aktion: "team-neu", an: f.an.value, betreff: f.betreff.value, text: f.text.value, anhaenge: anhangDaten(f) });
     knopf.disabled = false; knopf.textContent = "Senden";
     if (d.fehler || !d.ok) { meldung.textContent = d.fehler || "Das hat nicht geklappt."; meldung.classList.add("fehler"); return; }
     hinweis("Gesendet an " + f.an.value.trim());
@@ -332,10 +377,10 @@
     meldung.className = "antwort-meldung";
     if (!text) { meldung.textContent = "Bitte zuerst einen Text schreiben."; meldung.classList.add("fehler"); f.text.focus(); return; }
     knopf.disabled = true; knopf.textContent = "Wird gesendet …"; meldung.textContent = "";
-    var d = await abruf({ aktion: "team-antworten", art: m.art, uid: m.uid, text: text });
+    var d = await abruf({ aktion: "team-antworten", art: m.art, uid: m.uid, text: text, anhaenge: anhangDaten(f) });
     knopf.disabled = false; knopf.textContent = "Antwort senden";
     if (d.fehler || !d.ok) { meldung.textContent = d.fehler || "Das hat nicht geklappt."; meldung.classList.add("fehler"); return; }
-    f.text.value = ""; meldung.textContent = "Gesendet."; meldung.classList.add("ok");
+    f.text.value = ""; f._anh = []; anhListe(f); meldung.textContent = "Gesendet."; meldung.classList.add("ok");
     m.beantwortet = true; mailListe();
   });
   $("mails-lang").addEventListener("click", function (e) { var li = e.target.closest("[data-mail]"); if (li) mailOeffnen(+li.dataset.mail); });
