@@ -179,7 +179,15 @@
 
   /* Aufräumen wie im Dashboard von Lennart: nur Standard-Ordner, nichts wird endgültig gelöscht */
   var SYM = { archive: "i-archiv", inbox: "i-mail", junk: "i-spam", trash: "i-papierkorb", ungelesen: "i-punkt" };
-  var ORDNERNAME = { inbox: "Posteingang", archive: "Archiv", junk: "Spam", trash: "Papierkorb" };
+  var ORDNERNAME = { inbox: "Posteingang", sent: "Gesendet", archive: "Archiv", junk: "Spam", trash: "Papierkorb" };
+  var EIGENE = [];
+  function ordnerName(art) { return art.indexOf("eigen:") === 0 ? art.slice(6) : ORDNERNAME[art] || art; }
+  function eigeneZeigen(liste) {
+    if (!liste || !liste.length || EIGENE.length) return;
+    EIGENE = liste;
+    $("ordner-wahl").insertAdjacentHTML("beforeend", '<optgroup label="Eigene Ordner">' +
+      liste.map(function (n) { return '<option value="eigen:' + esc(n) + '">' + esc(n) + "</option>"; }).join("") + "</optgroup>");
+  }
   function werkzeugHtml(m) {
     var art = m.art || "inbox", k = [];
     if (art !== "archive" && art !== "trash") k.push(["verschieben", "archive", "Archivieren"]);
@@ -189,8 +197,11 @@
     if (art !== "trash") k.push(["verschieben", "trash", "Papierkorb"]);
     if (art !== "sent") k.push(["ungelesen", "", "Als ungelesen"]);
     var ziele = ["inbox", "archive", "junk", "trash"].filter(function (z) { return z !== art; });
+    var eigene = EIGENE.map(function (n) { return "eigen:" + n; }).filter(function (z) { return z !== art; });
     var auswahl = '<select data-verschieben aria-label="Verschieben nach"><option value="">Verschieben nach …</option>' +
-      ziele.map(function (z) { return '<option value="' + z + '">' + ORDNERNAME[z] + "</option>"; }).join("") + "</select>";
+      ziele.map(function (z) { return '<option value="' + z + '">' + ORDNERNAME[z] + "</option>"; }).join("") +
+      (eigene.length ? '<optgroup label="Eigene Ordner">' + eigene.map(function (z) { return '<option value="' + esc(z) + '">' + esc(ordnerName(z)) + "</option>"; }).join("") + "</optgroup>" : "") +
+      "</select>";
     return '<div class="werkzeuge" role="toolbar" aria-label="Mail bearbeiten">' + k.map(function (b) {
       return '<button type="button" data-was="' + b[0] + '" data-nach="' + b[1] + '"><svg class="i" aria-hidden="true"><use href="#' + SYM[b[1] || "ungelesen"] + '"/></svg>' + b[2] + "</button>";
     }).join("") + auswahl + '<span class="werkzeug-meldung" aria-live="polite"></span></div>';
@@ -215,7 +226,7 @@
     MAIL.liste.splice(i, 1);
     MAIL.aktiv = null;
     mailListe();
-    hinweis("Verschoben nach „" + ORDNERNAME[nach] + "“");
+    hinweis("Verschoben nach „" + ordnerName(nach) + "“");
     if (MAIL.liste[i]) mailOeffnen(i); else if (MAIL.liste[i - 1]) mailOeffnen(i - 1);
     else { $("mail-bereich").classList.remove("offen"); $("lesen").innerHTML = '<p class="platz">Keine Mails mehr in diesem Ordner.</p>'; }
   }
@@ -249,7 +260,7 @@
     }).join("");
     var gezeigt = (d.bilder || []).map(function (b) { return b.name; });
     var rest = (d.anhaenge || []).filter(function (n) { var k = gezeigt.indexOf(n); if (k < 0) return true; gezeigt.splice(k, 1); return false; });
-    var antwort = m.art !== "inbox" ? "" :
+    var antwort = m.art === "sent" ? "" :
       '<form class="antwort-feld" data-antwort novalidate><label for="antwort-text">Antwort an ' + esc(d.antwortAn || m.vonAdresse) + '</label>' +
       '<textarea id="antwort-text" name="text" placeholder="Guten Tag …" required></textarea>' +
       '<div class="antwort-fuss"><button class="knopf" type="submit">Antwort senden</button><small>Geht von ' + esc(MAIL.postfach) + ' raus, mit deiner Signatur, die ursprüngliche Mail wird angehängt.</small>' +
@@ -321,7 +332,7 @@
     meldung.className = "antwort-meldung";
     if (!text) { meldung.textContent = "Bitte zuerst einen Text schreiben."; meldung.classList.add("fehler"); f.text.focus(); return; }
     knopf.disabled = true; knopf.textContent = "Wird gesendet …"; meldung.textContent = "";
-    var d = await abruf({ aktion: "team-antworten", uid: m.uid, text: text });
+    var d = await abruf({ aktion: "team-antworten", art: m.art, uid: m.uid, text: text });
     knopf.disabled = false; knopf.textContent = "Antwort senden";
     if (d.fehler || !d.ok) { meldung.textContent = d.fehler || "Das hat nicht geklappt."; meldung.classList.add("fehler"); return; }
     f.text.value = ""; meldung.textContent = "Gesendet."; meldung.classList.add("ok");
@@ -574,6 +585,7 @@
       return;
     }
     MAIL.postfach = d.postfach || "";
+    eigeneZeigen(d.ordner);
     if (d.person && !PERSON) {
       PERSON = d.person;
       var vorname = String(PERSON.name).split(" ")[0];
