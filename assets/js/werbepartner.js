@@ -23,7 +23,7 @@
     ["webseite", "Webseite", "url", 200, "voll"],
   ];
 
-  var W = { abruf: null, liste: null, filter: "alle", suche: "", offen: null, laeuft: false };
+  var W = { abruf: null, liste: null, filter: "alle", offen: null, laeuft: false };
 
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function $(id) { return document.getElementById(id); }
@@ -51,7 +51,6 @@
     k.innerHTML =
       '<h2>Werbepartner <button type="button" class="wp-neu" data-wp-neu><span aria-hidden="true">+</span> Neu</button></h2>' +
       '<div class="wp-filter" role="group" aria-label="Nach Stand filtern"></div>' +
-      '<label class="wp-suche"><span class="unsichtbar">Werbepartner suchen</span><input type="search" placeholder="Suchen" autocomplete="off" data-wp-suche></label>' +
       '<ul class="liste wp-liste" id="wp-liste"><li class="leer">wird geladen</li></ul>';
     k.addEventListener("click", function (e) {
       if (e.target.closest("[data-wp-neu]")) { oeffnen(null); return; }
@@ -65,7 +64,6 @@
       var li = e.target.closest("[data-wp]");
       if (li && e.target === li && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); oeffnen(li.dataset.wp); }
     });
-    k.querySelector("[data-wp-suche]").addEventListener("input", function (e) { W.suche = e.target.value.trim().toLowerCase(); zeigen(); });
   }
 
   function sortiert() {
@@ -91,9 +89,7 @@
     }).join("");
     var h = heute();
     var liste = sortiert().filter(function (p) {
-      if (W.filter !== "alle" && p.status !== W.filter) return false;
-      if (!W.suche) return true;
-      return [p.firma, p.ansprechpartner, p.ort, p.branche, p.telefon, p.email].join(" ").toLowerCase().indexOf(W.suche) >= 0;
+      return W.filter === "alle" || p.status === W.filter;
     });
     if (!alle.length) { ul.innerHTML = '<li class="leer">Noch keine Werbepartner. Oben auf „Neu“ tippen.</li>'; return; }
     if (!liste.length) { ul.innerHTML = '<li class="leer">Keine Treffer.</li>'; return; }

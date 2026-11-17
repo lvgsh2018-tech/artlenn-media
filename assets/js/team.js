@@ -1,7 +1,7 @@
 /* Team-Dashboard (team.html) für Mitarbeiter von Bad Salzuflen News.
    Zeigt nur: Instagram, Aufrufe der Webseite, Mails an die eigene Adresse
    (mit Antworten), den Kalender „Bad Salzuflen News“, eigene Erinnerungen und
-   Schlagzeilen von Bad Salzuflen News und Tagesschau. Was jemand sehen darf,
+   Schlagzeilen von Bad Salzuflen News, Tagesschau, BILD und NIUS. Was jemand sehen darf,
    entscheidet der Abruf „dashboard-konten“ auf dem Server, nicht diese Datei. */
 (function () {
   var C = window.AM_CONFIG || {};
@@ -523,7 +523,7 @@
 
   /* ---------------- Schlagzeilen und Meldungen ---------------- */
 
-  var NACHR = { bsn: null, ts: null };
+  var NACHR = { bsn: null, ts: null, sz: null };
   var RESSORT = { inland: "Inland", ausland: "Ausland", wirtschaft: "Wirtschaft", sport: "Sport", wissen: "Wissen", investigativ: "Investigativ", faktenfinder: "Faktenfinder" };
 
   function bsn(pfad) {
@@ -561,24 +561,35 @@
     }
     nachrichtenZeigen();
   }
+  // BILD und NIUS kommen über den Abruf (die Seiten lassen den Browser nicht direkt ran)
+  async function boulevard() {
+    var d = await abruf({ aktion: "schlagzeilen" });
+    NACHR.sz = ((d && d.schlagzeilen) || []).filter(function (s) { return s.quelle === "BILD" || s.quelle === "NIUS"; }).map(function (s) {
+      return { quelle: s.quelle, kurz: s.quelle === "BILD" ? "BI" : "NI", titel: s.titel, link: s.link, zeit: s.zeit, zusatz: "" };
+    });
+    nachrichtenZeigen();
+  }
   function meldung(n) {
     var info = [n.zusatz, n.zeit ? vorWann(n.zeit) : ""].filter(Boolean).join(" · ");
     return '<li><a href="' + esc(n.link) + '" target="_blank" rel="noopener"><span class="quelle">' + esc(n.kurz) + '</span><span class="t"><b>' + esc(n.titel) + "</b><small>" + esc(info || n.quelle) + "</small></span></a></li>";
   }
   function nachrichtenZeigen() {
     if (NACHR.bsn === null || NACHR.ts === null) return; // erst wenn beide da sind
-    var alle = NACHR.bsn.concat(NACHR.ts).sort(function (a, b) { return (Date.parse(b.zeit) || 0) - (Date.parse(a.zeit) || 0); });
+    var sz = NACHR.sz || [];
+    var alle = NACHR.bsn.concat(NACHR.ts, sz).sort(function (a, b) { return (Date.parse(b.zeit) || 0) - (Date.parse(a.zeit) || 0); });
     $("n-alle").innerHTML = alle.length ? alle.map(function (n) {
       var info = [n.quelle, n.zusatz, n.zeit ? vorWann(n.zeit) : ""].filter(Boolean).join(" · ");
       return '<li><a href="' + esc(n.link) + '" target="_blank" rel="noopener"><span class="quelle">' + esc(n.kurz) + '</span><span class="t"><b>' + esc(n.titel) + "</b><small>" + esc(info) + "</small></span></a></li>";
     }).join("") : '<li class="leer">Gerade keine Meldungen erreichbar.</li>';
-    // Schlagzeilen-Wechsler: abwechselnd Bad Salzuflen News und Tagesschau
+    // Schlagzeilen-Wechsler: abwechselnd Bad Salzuflen News, Tagesschau, BILD und NIUS
+    var bi = sz.filter(function (s) { return s.quelle === "BILD"; }), ni = sz.filter(function (s) { return s.quelle === "NIUS"; });
     var liste = [];
-    for (var i = 0; i < 7; i++) { if (NACHR.bsn[i]) liste.push(NACHR.bsn[i]); if (NACHR.ts[i]) liste.push(NACHR.ts[i]); }
+    for (var i = 0; i < 7; i++) [NACHR.bsn[i], NACHR.ts[i], bi[i], ni[i]].forEach(function (x) { if (x) liste.push(x); });
     szStart(liste);
   }
 
   var SZ = { liste: [], nr: 0, uhr: null, pause: false };
+  var SZ_NAME = { BSN: "BAD SALZUFLEN", TS: "TAGESSCHAU", BI: "BILD", NI: "NIUS" };
   function szFuellen() {
     var s = SZ.liste[SZ.nr]; if (!s) return;
     $("sz-link").href = s.link;
@@ -588,7 +599,7 @@
     var n = SZ.liste.length, danach = [];
     for (var k = 1; k <= 2 && k < n; k++) danach.push((SZ.nr + k) % n);
     $("sz-danach").innerHTML = danach.map(function (i) {
-      return '<li data-nr="' + i + '"><span class="q">' + esc(SZ.liste[i].kurz === "BSN" ? "BAD SALZUFLEN" : "TAGESSCHAU") + '</span><span class="t">' + esc(SZ.liste[i].titel) + "</span></li>";
+      return '<li data-nr="' + i + '"><span class="q">' + esc(SZ_NAME[SZ.liste[i].kurz] || SZ.liste[i].quelle) + '</span><span class="t">' + esc(SZ.liste[i].titel) + "</span></li>";
     }).join("");
     var b = $("sz-balken"); b.classList.remove("lauf"); void b.offsetWidth; b.classList.add("lauf");
   }
@@ -663,6 +674,7 @@
     uebersichtLaden();
     aufrufeLaden();
     instagramLaden();
+    boulevard();
     if (window.AM_WP) window.AM_WP.start(abruf);
     setInterval(allesNeu, 120000);
     document.addEventListener("visibilitychange", function () { if (!document.hidden && Date.now() - ZULETZT > 120000) allesNeu(); });
@@ -678,5 +690,6 @@
     instagramLaden();
     badSalzuflen();
     welt();
+    boulevard();
   }
 })();
