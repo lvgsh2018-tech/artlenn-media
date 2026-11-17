@@ -263,7 +263,7 @@
       ? KONTEN.ansicht.map(function (i) { return KONTEN.mails[i]; })
       : KONTEN.mails.filter(function (m) { return !m.weg && (KONTEN.filter === "alle" || m.konto === KONTEN.filter); });
     $("mails-lang").innerHTML = liste.length ? liste.map(mailZeile).join("") : '<li class="leer">Keine Mails in diesem Ordner.</li>';
-    if (KONTEN.aktiv === null) $("lesen").innerHTML = '<p class="platz">Links eine Mail auswählen.</p>';
+    if (KONTEN.aktiv === null && !$("lesen").querySelector("[data-neu]")) $("lesen").innerHTML = '<p class="platz">Links eine Mail auswählen.</p>';
     var mehr = Object.keys(KONTEN.mehr).some(function (k) { return KONTEN.mehr[k]; });
     $("aeltere").hidden = !KONTEN.ansicht || !mehr;
   }
@@ -322,10 +322,6 @@
     var m = KONTEN.mails[i]; if (!m) return;
     KONTEN.aktiv = i;
     [].forEach.call($("mails-lang").children, function (li) { li.setAttribute("aria-current", li.dataset.mail == i); });
-    var konto = KONTEN.liste.filter(function (k) { return k.schluessel === m.konto; })[0] || {};
-    var oeffnen = konto.art === "gmail"
-      ? "https://mail.google.com/mail/u/?authuser=" + encodeURIComponent(konto.adresse || "")
-      : "https://www.icloud.com/mail/";
     var kopfHtml = werkzeugHtml(m) + '<div class="kopfzeile"><span class="person">' + esc((m.von || "?").charAt(0).toUpperCase()) + "</span><div><b>" + esc(m.von) + '</b><div style="color:var(--schrift-3);font-size:13px">' + esc(m.vonAdresse) + " · " + esc(m.kontoName) + (m.datum ? " · " + new Date(m.datum).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" }) : "") + "</div></div></div><h3>" + esc(m.betreff) + "</h3>";
     $("lesen").innerHTML = kopfHtml + '<p class="text wenig">Wird geladen …</p>';
     var r;
@@ -351,7 +347,11 @@
         var rest = (d.anhaenge || []).filter(function (n) { var i = gezeigt.indexOf(n); if (i < 0) return true; gezeigt.splice(i, 1); return false; });
         return rest.length ? '<p class="anh">Anhänge: ' + esc(rest.join(", ")) + "</p>" : "";
       })() +
-      '<a class="knopf link" href="' + esc(oeffnen) + '" target="_blank" rel="noopener">In ' + esc(konto.art === "gmail" ? "Gmail" : "iCloud Mail") + " antworten</a>";
+      (m.art === "sent" || m.art === "drafts" ? "" :
+        '<form class="antwort-feld" data-antwort novalidate><label for="antwort-text">Antwort an ' + esc(d.antwortAn || m.vonAdresse) + "</label>" +
+        '<textarea id="antwort-text" name="text" placeholder="Guten Tag …"></textarea>' + anhangBlock() +
+        '<div class="antwort-fuss"><button class="knopf" type="submit">Antwort senden</button><small>Geht von ' + esc(ABSENDER) + " raus, mit deiner Signatur, die ursprüngliche Mail wird angehängt.</small>" +
+        '<span class="antwort-meldung" aria-live="polite"></span></div></form>');
     if (!d.html) {
       $("lesen").innerHTML = kopfHtml + '<div class="text">' + esc(d.text || "(kein Text)") + "</div>" + fuss;
       return;
@@ -359,6 +359,103 @@
     $("lesen").innerHTML = kopfHtml + '<div class="mailrahmen"></div>' + fuss;
     mailGestaltet($("lesen").querySelector(".mailrahmen"), d.html);
   }
+
+  /* ---------------- Schreiben: neue Mail, Antwort, Anhänge ----------------
+     Versand läuft über den Abruf (Resend), immer von ABSENDER mit Signatur. */
+  var ABSENDER = "l.schleef@badsalzuflennews.de";
+  var ANH_MAX = 15 * 1024 * 1024;
+  function anhangBlock() {
+    return '<div class="anh-zeile"><button type="button" class="knopf leise" data-anhang-wahl><svg class="i" aria-hidden="true"><use href="#i-klammer"/></svg>Datei anhängen</button>' +
+      '<input type="file" multiple hidden data-anhang-datei><span class="anh-liste"></span></div>';
+  }
+  function groesse(n) { return n >= 1048576 ? (n / 1048576).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; }
+  function anhListe(f) {
+    f.querySelector(".anh-liste").innerHTML = (f._anh || []).map(function (a, i) {
+      return '<span class="anh-chip"><span title="' + esc(a.name) + '">' + esc(a.name) + " · " + groesse(a.groesse) + '</span><button type="button" data-anhang-weg="' + i + '" aria-label="' + esc(a.name) + ' entfernen">×</button></span>';
+    }).join("");
+  }
+  function dateiLesen(datei) {
+    return new Promise(function (ok, fehl) {
+      var r = new FileReader();
+      r.onload = function () { var t = String(r.result); ok(t.slice(t.indexOf(",") + 1)); };
+      r.onerror = fehl;
+      r.readAsDataURL(datei);
+    });
+  }
+  function anhangDaten(f) { return (f._anh || []).map(function (a) { return { name: a.name, typ: a.typ, inhalt: a.inhalt }; }); }
+  $("lesen").addEventListener("click", function (e) {
+    var w = e.target.closest("[data-anhang-wahl]");
+    if (w) { w.closest("form").querySelector("[data-anhang-datei]").click(); return; }
+    var x = e.target.closest("[data-anhang-weg]");
+    if (x) { var f = x.closest("form"); f._anh.splice(+x.dataset.anhangWeg, 1); anhListe(f); return; }
+    if (e.target.closest("[data-verwerfen]")) {
+      var n = e.target.closest("[data-neu]");
+      if (n && (n.text.value.trim() || n.betreff.value.trim()) && !confirm("Diese Mail verwerfen?")) return;
+      $("lesen").innerHTML = '<p class="platz">Links eine Mail auswählen.</p>';
+    }
+  });
+  $("lesen").addEventListener("change", async function (e) {
+    var inp = e.target.closest("[data-anhang-datei]"); if (!inp) return;
+    var f = inp.closest("form"), meldung = f.querySelector(".antwort-meldung");
+    f._anh = f._anh || [];
+    var summe = f._anh.reduce(function (n, a) { return n + a.groesse; }, 0), zuGross = [];
+    meldung.className = "antwort-meldung"; meldung.textContent = "Dateien werden gelesen …";
+    for (var i = 0; i < inp.files.length; i++) {
+      var d = inp.files[i];
+      if (f._anh.length >= 10 || summe + d.size > ANH_MAX) { zuGross.push(d.name); continue; }
+      try { f._anh.push({ name: d.name, typ: d.type || "application/octet-stream", groesse: d.size, inhalt: await dateiLesen(d) }); summe += d.size; }
+      catch (_) { zuGross.push(d.name); }
+    }
+    inp.value = "";
+    anhListe(f);
+    meldung.textContent = zuGross.length ? "Nicht angehängt (zusammen höchstens 15 MB und 10 Dateien): " + zuGross.join(", ") : "";
+    if (zuGross.length) meldung.classList.add("fehler");
+  });
+
+  function neueMail() {
+    KONTEN.aktiv = null;
+    [].forEach.call($("mails-lang").children, function (li) { li.removeAttribute("aria-current"); });
+    $("lesen").innerHTML = '<form class="schreiben" data-neu novalidate><h3>Neue E-Mail</h3>' +
+      '<p class="hilfe">Von ' + esc(ABSENDER) + "</p>" +
+      '<label class="feld"><span>An</span><input name="an" type="text" inputmode="email" autocomplete="off" placeholder="name@beispiel.de"></label>' +
+      '<p class="hilfe" style="margin-top:-8px">Mehrere Empfänger mit Komma trennen.</p>' +
+      '<label class="feld"><span>Betreff</span><input name="betreff" type="text" maxlength="300" autocomplete="off"></label>' +
+      '<div class="antwort-feld"><label for="neu-text">Text</label><textarea id="neu-text" name="text" placeholder="Guten Tag …"></textarea></div>' +
+      '<p class="hilfe" style="margin-top:-6px">Deine Signatur (Lennart Schleef, Redaktionsleitung Bad Salzuflen News) wird automatisch angehängt.</p>' + anhangBlock() +
+      '<div class="antwort-fuss"><button class="knopf" type="submit">Senden</button><button class="knopf leise" type="button" data-verwerfen>Verwerfen</button>' +
+      '<span class="antwort-meldung" aria-live="polite"></span></div></form>';
+    $("lesen").querySelector('[name="an"]').focus();
+  }
+  function neuOeffnen(e) {
+    e.preventDefault();
+    var reiter = document.querySelector('.reiter [data-ziel="mail"]');
+    if (!mailSichtbar() && reiter) reiter.click();
+    neueMail();
+    $("lesen").scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+  $("neu-mail").addEventListener("click", neuOeffnen);
+  $("neu-mail-kurz").addEventListener("click", neuOeffnen);
+  $("lesen").addEventListener("submit", async function (e) {
+    var f = e.target.closest("form"); if (!f) return;
+    e.preventDefault();
+    var neu = f.hasAttribute("data-neu");
+    var meldung = f.querySelector(".antwort-meldung"), knopf = f.querySelector('[type="submit"]'), beschriftung = knopf.textContent;
+    meldung.className = "antwort-meldung";
+    var fehlt = neu && !f.an.value.trim() ? [f.an, "Bitte einen Empfänger eintragen."] : neu && !f.betreff.value.trim() ? [f.betreff, "Bitte einen Betreff eintragen."]
+      : !f.text.value.trim() ? [f.text, "Bitte zuerst einen Text schreiben."] : null;
+    if (fehlt) { meldung.textContent = fehlt[1]; meldung.classList.add("fehler"); fehlt[0].focus(); return; }
+    var m = neu ? null : KONTEN.mails[KONTEN.aktiv];
+    if (!neu && !m) return;
+    knopf.disabled = true; knopf.textContent = "Wird gesendet …"; meldung.textContent = "";
+    var d = await wpAbruf(neu
+      ? { aktion: "senden", an: f.an.value, betreff: f.betreff.value, text: f.text.value, anhaenge: anhangDaten(f) }
+      : { aktion: "antworten", konto: m.konto, ordner: m.ordner || "INBOX", uid: m.uid, text: f.text.value, anhaenge: anhangDaten(f) });
+    knopf.disabled = false; knopf.textContent = beschriftung;
+    if (d.fehler || !d.ok) { meldung.textContent = d.fehler || "Das hat nicht geklappt."; meldung.classList.add("fehler"); return; }
+    if (neu) { $("lesen").innerHTML = '<p class="platz">Gesendet an ' + esc(f.an.value.trim()) + ". Eine Kopie liegt im iCloud-Postfach unter „Gesendet“.</p>"; return; }
+    f.text.value = ""; f._anh = []; anhListe(f);
+    meldung.textContent = "Gesendet an " + (d.an || "") + "."; meldung.classList.add("ok");
+  });
 
   /* ---------------- Aufräumen: Knöpfe über der geöffneten Mail ---------------- */
 

@@ -214,6 +214,40 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 .anh-bild a{color:var(--schrift-2);flex:none}
 .knopf.link{display:inline-block;text-decoration:none;margin-top:22px}
 .mails .wenig{color:var(--schrift-3)}
+/* Mail: Schreiben und Antworten (wie im Team-Dashboard) */
+.feld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.feld span{font-size:12px;color:var(--schrift-2)}
+.feld input,.antwort-feld textarea{background:var(--glas-hell);border:1px solid var(--rand);border-radius:10px;color:var(--schrift);font:inherit;font-size:15px;min-height:44px;padding:0 12px;outline:none;color-scheme:dark;min-width:0}
+.feld input:focus,.antwort-feld textarea:focus{border-color:var(--rand-hell);box-shadow:0 0 0 3px rgba(125,178,255,.25)}
+.feld input::placeholder,.antwort-feld textarea::placeholder{color:var(--schrift-3)}
+.lesen .knopf,.neu-mail{min-height:44px}
+.knopf[disabled]{opacity:.55;cursor:default}
+.knopf.leise{background:transparent;color:var(--schrift-2);border:1px solid var(--rand);font-weight:500}
+.knopf.leise:hover{color:var(--schrift);background:var(--glas-hell)}
+.antwort-feld{margin-top:26px;display:flex;flex-direction:column;gap:8px}
+.antwort-feld label{font-size:13px;color:var(--schrift-2);font-weight:600}
+.antwort-feld textarea{min-height:130px;padding:10px 12px;resize:vertical;line-height:1.5}
+.antwort-fuss{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.antwort-fuss small{color:var(--schrift-3);font-size:12.5px}
+.antwort-meldung{font-size:13px;color:var(--schrift-2)}
+.antwort-meldung.fehler{color:var(--pink)}
+.antwort-meldung.ok{color:var(--gruen)}
+.neu-mail{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:0 0 10px}
+.neu-mail svg.i{width:17px;height:17px}
+.mail-links{display:flex;gap:16px}
+.schreiben{display:flex;flex-direction:column;gap:12px;max-width:760px}
+.schreiben h3{margin-bottom:4px}
+.schreiben .feld input{width:100%}
+.schreiben .antwort-feld{margin-top:0}
+.schreiben .hilfe{font-size:12px;color:var(--schrift-3);margin:0}
+.anh-zeile{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.anh-zeile .knopf{display:inline-flex;align-items:center;gap:7px}
+.anh-zeile .knopf svg.i{width:16px;height:16px}
+.anh-liste{display:contents}
+.anh-chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;border:1px solid var(--rand);background:var(--glas-hell);border-radius:999px;padding:3px 3px 3px 12px;font-size:12.5px;color:var(--schrift-2)}
+.anh-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+.anh-chip button{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--schrift-3);font-size:17px;line-height:1;cursor:pointer}
+.anh-chip button:hover{background:rgba(255,255,255,.12);color:var(--schrift)}
 .kalender{padding:24px 28px}
 .kalender h3{font-size:14px;font-weight:600;color:var(--schrift-2);margin:20px 0 6px;text-transform:none}
 .kalender h3:first-child{margin-top:0}
@@ -414,6 +448,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
   <symbol id="i-spam" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M12 8v5M12 16v.5"/></symbol>
   <symbol id="i-punkt" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/></symbol>
   <symbol id="i-ordner" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-klammer" viewBox="0 0 24 24"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></symbol>
   <symbol id="i-stift" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" stroke="none"/></symbol>
@@ -494,7 +529,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
         </article>
 
         <article class="k glas s8 mailkarte">
-          <h2>E-Mails <a href="#" data-ziel="mail" id="mail-zahl">Alle ansehen</a></h2>
+          <h2>E-Mails <span class="mail-links"><a href="#" id="neu-mail-kurz">Schreiben</a><a href="#" data-ziel="mail" id="mail-zahl">Alle ansehen</a></span></h2>
           <ul class="liste" id="mails-kurz"><li class="leer">wird geladen</li></ul>
         </article>
 
@@ -570,6 +605,7 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
     <section class="ansicht" data-ansicht="mail" hidden>
       <div class="mail">
         <div class="spalte glas">
+          <button type="button" class="knopf neu-mail" id="neu-mail"><svg class="i" aria-hidden="true"><use href="#i-stift"/></svg>Neue E-Mail</button>
           <div class="konten" id="konten-knoepfe"></div>
           <label class="ordnerwahl">
             <svg class="i" aria-hidden="true"><use href="#i-ordner"/></svg>
@@ -656,6 +692,6 @@ svg.i{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 </script>
 <script src="assets/js/werbepartner.js?v=20261117b"></script>
 <script src="assets/js/instagram.js?v=20261117a"></script>
-<script src="assets/js/dashboard.js?v=20261117b"></script>
+<script src="assets/js/dashboard.js?v=20261117c"></script>
 </body>
 </html>
