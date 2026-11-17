@@ -154,7 +154,7 @@
     MAIL.liste = MAIL.liste.concat(d.mails || []);
     MAIL.mehr = !!d.mehr; MAIL.aelteste = d.aelteste;
     mailListe();
-    if (neu && MAIL.aktiv === null) $("lesen").innerHTML = '<p class="platz">Links eine Mail auswählen.</p>';
+    if (neu && MAIL.aktiv === null && !$("lesen").querySelector("[data-neu]")) $("lesen").innerHTML = '<p class="platz">Links eine Mail auswählen.</p>';
   }
 
   function mailGestaltet(ziel, html) {
@@ -258,7 +258,56 @@
     mailGestaltet($("lesen").querySelector(".mailrahmen"), d.html);
   }
 
+  /* Neue Mail von seiner Adresse schreiben */
+  function neueMail() {
+    if (!MAIL.postfach) return;
+    MAIL.aktiv = null; mailListe();
+    $("mail-bereich").classList.add("offen");
+    $("lesen").innerHTML = '<button type="button" class="zurueck-mail" data-zurueck><svg class="i" aria-hidden="true"><use href="#i-zurueck"/></svg>Zurück zur Liste</button>' +
+      '<form class="schreiben" data-neu novalidate><h3>Neue E-Mail</h3>' +
+      '<p class="hilfe">Von ' + esc(MAIL.postfach) + '</p>' +
+      '<label class="feld"><span>An</span><input name="an" type="text" inputmode="email" autocomplete="off" placeholder="name@beispiel.de"></label>' +
+      '<p class="hilfe" style="margin-top:-8px">Mehrere Empfänger mit Komma trennen.</p>' +
+      '<label class="feld"><span>Betreff</span><input name="betreff" type="text" maxlength="300" autocomplete="off"></label>' +
+      '<div class="antwort-feld"><label for="neu-text">Text</label><textarea id="neu-text" name="text" placeholder="Guten Tag …"></textarea></div>' +
+      '<div class="antwort-fuss"><button class="knopf" type="submit">Senden</button><button class="knopf leise" type="button" data-verwerfen>Verwerfen</button>' +
+      '<span class="antwort-meldung" aria-live="polite"></span></div></form>';
+    $("lesen").querySelector('[name="an"]').focus();
+  }
+  function neuOeffnen(e) {
+    e.preventDefault();
+    if (MAIL.art !== "inbox") { MAIL.art = "inbox"; $("ordner-wahl").value = "inbox"; MAIL.geladen = false; }
+    wechseln("mail");
+    neueMail();
+  }
+  $("neu-mail").addEventListener("click", neuOeffnen);
+  $("neu-mail-kurz").addEventListener("click", neuOeffnen);
+  $("lesen").addEventListener("submit", async function (e) {
+    var f = e.target.closest("[data-neu]"); if (!f) return;
+    e.preventDefault();
+    var meldung = f.querySelector(".antwort-meldung"), knopf = f.querySelector('[type="submit"]');
+    meldung.className = "antwort-meldung";
+    var fehlt = !f.an.value.trim() ? [f.an, "Bitte einen Empfänger eintragen."] : !f.betreff.value.trim() ? [f.betreff, "Bitte einen Betreff eintragen."]
+      : !f.text.value.trim() ? [f.text, "Bitte zuerst einen Text schreiben."] : null;
+    if (fehlt) { meldung.textContent = fehlt[1]; meldung.classList.add("fehler"); fehlt[0].focus(); return; }
+    knopf.disabled = true; knopf.textContent = "Wird gesendet …"; meldung.textContent = "";
+    var d = await abruf({ aktion: "team-neu", an: f.an.value, betreff: f.betreff.value, text: f.text.value });
+    knopf.disabled = false; knopf.textContent = "Senden";
+    if (d.fehler || !d.ok) { meldung.textContent = d.fehler || "Das hat nicht geklappt."; meldung.classList.add("fehler"); return; }
+    hinweis("Gesendet an " + f.an.value.trim());
+    $("mail-bereich").classList.remove("offen");
+    $("lesen").innerHTML = '<p class="platz">Gesendet. Eine Kopie liegt unter „Gesendet“.</p>';
+    if (MAIL.art === "sent") ordnerLaden(true);
+  });
+
   $("lesen").addEventListener("click", function (e) {
+    if (e.target.closest("[data-verwerfen]")) {
+      var f = e.target.closest("[data-neu]");
+      if (f && (f.text.value.trim() || f.betreff.value.trim()) && !confirm("Diese Mail verwerfen?")) return;
+      $("mail-bereich").classList.remove("offen");
+      $("lesen").innerHTML = '<p class="platz">Links eine Mail auswählen.</p>';
+      return;
+    }
     if (e.target.closest("[data-zurueck]")) { $("mail-bereich").classList.remove("offen"); MAIL.aktiv = null; mailListe(); }
   });
   $("lesen").addEventListener("submit", async function (e) {
