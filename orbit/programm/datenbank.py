@@ -361,7 +361,8 @@ NACHZURUESTEN = (
     ("aufgaben", "uhrzeit", "TEXT DEFAULT ''"),
     # Umsatzsteuer in Ausgaben und Einnahmen: der Betrag bleibt der gezahlte
     # Betrag (brutto), dazu der Satz. "ausland" = Rechnung ohne Steuer aus dem
-    # EU-Ausland (Meta, Google ...), dort meldet man die Steuer selbst (§ 13b).
+    # Ausland, dort meldet man die Steuer selbst (§ 13b): 1 = Firma aus der EU
+    # (Meta, Google, Adobe aus Irland), 2 = Firma ausserhalb der EU.
     ("belege", "steuersatz", "REAL DEFAULT 0"),
     ("belege", "ausland", "INTEGER DEFAULT 0"),
     ("ausgaben", "steuersatz", "REAL DEFAULT 0"),

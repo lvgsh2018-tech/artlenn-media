@@ -268,6 +268,7 @@ def ust_werte(conn, von: str, bis: str) -> dict:
                              "text": x.get("beschreibung") or "", "netto": netto, "steuer": st})
 
     vorsteuer, ausland_netto, ausland_steuer = 0.0, 0.0, 0.0
+    dritt_netto, dritt_steuer = 0.0, 0.0
     ausgaben_liste = []
     for tabelle in ("belege", "ausgaben"):
         for a in db.zeilen(conn, "SELECT * FROM %s WHERE datum BETWEEN ? AND ?" % tabelle, (von, bis)):
@@ -277,9 +278,16 @@ def ust_werte(conn, von: str, bis: str) -> dict:
                 satz = float(a.get("steuersatz") or 0) or 19.0
                 netto = float(a["betrag"] or 0)
                 st = round(netto * satz / 100.0, 2)
-                ausland_netto += netto
-                ausland_steuer += st
-                ausgaben_liste.append({"art": "Ausland", "datum": a["datum"], "text": a["beschreibung"],
+                if int(a.get("ausland") or 0) == 2:
+                    dritt_netto += netto
+                    dritt_steuer += st
+                    art = "Ausland außerhalb der EU"
+                else:
+                    ausland_netto += netto
+                    ausland_steuer += st
+                    art = "Ausland EU"
+                ausgaben_liste.append({"art": art, "datum": a["datum"],
+                                       "text": "%s (%s)" % (a["beschreibung"] or "", art),
                                        "netto": netto, "steuer": st})
             elif float(a.get("steuersatz") or 0) > 0:
                 st = _anteil(a["betrag"], a["steuersatz"])
@@ -298,11 +306,14 @@ def ust_werte(conn, von: str, bis: str) -> dict:
     st86 = round(kz86 * 0.07, 2)
     kz46 = euro(round(ausland_netto, 2))
     kz47 = round(ausland_steuer, 2)
+    kz84 = euro(round(dritt_netto, 2))
+    kz85 = round(dritt_steuer, 2)
     kz66 = round(vorsteuer, 2)
-    kz67 = kz47
-    kz83 = round(st81 + st86 + kz47 - kz66 - kz67, 2)
+    kz67 = round(kz47 + kz85, 2)
+    kz83 = round(st81 + st86 + kz47 + kz85 - kz66 - kz67, 2)
     return {"kz81": kz81, "st81": st81, "kz86": kz86, "st86": st86,
-            "kz46": kz46, "kz47": kz47, "kz66": kz66, "kz67": kz67, "kz83": kz83,
+            "kz46": kz46, "kz47": kz47, "kz84": kz84, "kz85": kz85,
+            "kz66": kz66, "kz67": kz67, "kz83": kz83,
             "andere_saetze": [{"satz": k, "grundlage": v} for k, v in andere.items()],
             "umsaetze": sorted(posten_liste, key=lambda x: x["datum"] or ""),
             "ausgaben": sorted(ausgaben_liste, key=lambda x: x["datum"] or ""),
@@ -478,10 +489,12 @@ def csv_umsatzsteuer(conn, jahr) -> str:
     reihen = []
     for m in sorted(u["meldungen"], key=lambda x: x["von"]):
         reihen.append([m["name"], m["frist"], m["kz81"], k(m["st81"]), m["kz86"], k(m["st86"]),
-                       m["kz46"], k(m["kz47"]), k(m["kz66"]), k(m["kz67"]), k(m["kz83"]),
+                       m["kz46"], k(m["kz47"]), m["kz84"], k(m["kz85"]),
+                       k(m["kz66"]), k(m["kz67"]), k(m["kz83"]),
                        m["uebermittelt_am"], m["bezahlt_am"]])
     return _csv(["Zeitraum", "Frist", "Kz 81 Umsatz 19 %", "Steuer 19 %", "Kz 86 Umsatz 7 %",
-                 "Steuer 7 %", "Kz 46 Leistungen Ausland", "Kz 47 Steuer Ausland", "Kz 66 Vorsteuer",
+                 "Steuer 7 %", "Kz 46 Leistungen EU-Ausland", "Kz 47 Steuer EU-Ausland",
+                 "Kz 84 Leistungen Ausland außerhalb EU", "Kz 85 Steuer Ausland außerhalb EU", "Kz 66 Vorsteuer",
                  "Kz 67 Vorsteuer Ausland", "Kz 83 Zahllast", "Übermittelt am", "Bezahlt am"], reihen)
 
 
@@ -674,7 +687,7 @@ def csv_ausgaben(conn, jahr) -> str:
 
 def _ust_text(a) -> str:
     if a.get("ausland"):
-        return "Ausland (§ 13b)"
+        return "Ausland außerhalb EU (§ 13b)" if int(a["ausland"]) == 2 else "Ausland EU (§ 13b)"
     satz = float(a.get("steuersatz") or 0)
     return ("%g %%" % satz).replace(".", ",") if satz else "keine"
 

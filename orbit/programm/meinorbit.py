@@ -225,7 +225,7 @@ def endpunkt(pfad: str, frage: dict, koerper: dict, methode: str):
                                       float(daten.get("betrag") or 0),
                                       1 if daten.get("weiterberechnen") else 0, dateiname,
                                       float(daten.get("steuersatz") or 0),
-                                      1 if daten.get("ausland") else 0))
+                                      _int(daten.get("ausland")) or 0))
                 return {"ok": True}, None, None
             if methode == "DELETE":
                 conn.execute("DELETE FROM belege WHERE id=? AND abgerechnet=0", (koerper.get("id"),))
@@ -307,7 +307,7 @@ def endpunkt(pfad: str, frage: dict, koerper: dict, methode: str):
                                       float(daten.get("betrag") or 0),
                                       daten.get("rhythmus") or "", dateiname,
                                       float(daten.get("steuersatz") or 0),
-                                      1 if daten.get("ausland") else 0))
+                                      _int(daten.get("ausland")) or 0))
                 return {"ok": True}, None, None
             if methode == "DELETE":
                 conn.execute("DELETE FROM ausgaben WHERE id=?", (koerper.get("id"),))
