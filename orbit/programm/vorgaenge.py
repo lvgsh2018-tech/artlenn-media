@@ -427,9 +427,15 @@ def aus_auftrag(conn, auftrag_id: int, typ: str = "rechnung") -> int:
     offene_belege = [b for b in akte["belege"] if b["weiterberechnen"] and not b["abgerechnet"]]
     if typ == "rechnung":
         for b in offene_belege:
+            # Mit Umsatzsteuer wird die Auslage netto weiterberechnet, die
+            # Vorsteuer holt man sich vom Finanzamt zurueck.
+            preis = float(b["betrag"] or 0)
+            if e.get("kleinunternehmer") != "ja" and not b.get("ausland") \
+                    and float(b.get("steuersatz") or 0) > 0:
+                preis = round(preis / (1 + float(b["steuersatz"]) / 100.0), 2)
             posten.append({"bezeichnung": "Auslage: %s" % (b["beschreibung"] or b["kategorie"]),
                            "menge": 1, "einheit": "Pauschale",
-                           "einzelpreis": float(b["betrag"] or 0),
+                           "einzelpreis": preis,
                            "steuersatz": 0 if e.get("kleinunternehmer") == "ja"
                            else float(e.get("steuersatz") or 0)})
 
@@ -737,6 +743,8 @@ def startseite(conn) -> dict:
                                  "überfällig (%s €)." % (p["nummer"], p["kunde"], abs(p["tage"] or 0),
                                                          rg.geld(p["brutto"])),
                                  "ziel": "rechnung", "id": p["id"]})
+    for h in finanzen.ust_erinnerungen(conn):
+        erinnerungen.append(dict(h, ziel="finanzen", id=None))
     entwuerfe = db.zeilen(conn, "SELECT COUNT(*) AS n FROM rechnungen WHERE status='entwurf'")[0]["n"]
     if entwuerfe:
         erinnerungen.append({"art": "hinweis", "text": "%d Rechnungsentwürfe warten darauf, "
@@ -777,6 +785,7 @@ def startseite(conn) -> dict:
             "veraenderung": stat["veraenderung"],
             "gewinn": z["gewinn"], "ausgaben": z["ausgaben"],
             "ruecklage": z["ruecklage"], "ruecklage_satz": z["ruecklage_satz"],
+            "ust_offen": z["ust_offen"],
             "offene_anzahl": len(offen),
             "kunden": db.zeilen(conn, "SELECT COUNT(*) AS n FROM kunden WHERE archiviert=0")[0]["n"],
             "auftraege_laufend": db.zeilen(

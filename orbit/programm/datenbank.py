@@ -241,6 +241,14 @@ CREATE TABLE IF NOT EXISTS ausgaben (
     dateiname    TEXT DEFAULT ''
 );
 
+CREATE TABLE IF NOT EXISTS ust_meldungen (
+    zeitraum        TEXT PRIMARY KEY,         -- 2027-02 | 2027-Q1 | 2027 (Jahreserklaerung)
+    uebermittelt_am TEXT DEFAULT '',
+    bezahlt_am      TEXT DEFAULT '',
+    betrag          REAL DEFAULT 0,           -- + an das Finanzamt, - Erstattung
+    buchung         TEXT DEFAULT ''           -- ausgaben:12 | einnahmen:7
+);
+
 CREATE TABLE IF NOT EXISTS einnahmen (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     datum        TEXT,
@@ -309,6 +317,9 @@ STANDARD_EINSTELLUNGEN = {
     "kleinunternehmer": "ja",
     "steuersatz": "0",
     "hinweis_19": "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
+    "ust_ab": "",
+    "ust_rhythmus": "monatlich",
+    "ust_dauerfrist": "nein",
     "zahlungsziel": "14",
     "kunden_praefix": "K-",
     "kunden_stellen": "4",
@@ -348,6 +359,14 @@ NACHZURUESTEN = (
     ("auftragsposten", "abgerechnet", "INTEGER DEFAULT 0"),
     ("auftragsposten", "rechnung_id", "INTEGER"),
     ("aufgaben", "uhrzeit", "TEXT DEFAULT ''"),
+    # Umsatzsteuer in Ausgaben und Einnahmen: der Betrag bleibt der gezahlte
+    # Betrag (brutto), dazu der Satz. "ausland" = Rechnung ohne Steuer aus dem
+    # EU-Ausland (Meta, Google ...), dort meldet man die Steuer selbst (§ 13b).
+    ("belege", "steuersatz", "REAL DEFAULT 0"),
+    ("belege", "ausland", "INTEGER DEFAULT 0"),
+    ("ausgaben", "steuersatz", "REAL DEFAULT 0"),
+    ("ausgaben", "ausland", "INTEGER DEFAULT 0"),
+    ("einnahmen", "steuersatz", "REAL DEFAULT 0"),
 )
 
 

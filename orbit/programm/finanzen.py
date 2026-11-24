@@ -9,7 +9,7 @@ import io
 from datetime import date, datetime, timedelta
 
 import datenbank as db
-from rechnung import geld, kundenname
+from rechnung import geld, kundenname, summen
 
 MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August",
           "September", "Oktober", "November", "Dezember"]
@@ -143,13 +143,21 @@ def euer(conn, jahr) -> dict:
     gewinn = round(einnahme_summe - ausgabe_summe, 2)
     e = db.einstellungen_lesen(conn)
     satz = float(e.get("steuerruecklage") or 0)
+
+    # Umsatzsteuer steckt in den Bruttobetraegen. Fuer die Anlage EUER wird sie
+    # getrennt ausgewiesen; zurueckgelegt wird die noch nicht gezahlte voll.
+    ust = _euer_umsatzsteuer(conn, einnahmen, direkte, belege, ausgaben)
+    ust_offen = ust_offen_betrag(conn)
+    ruecklage = round(max(0.0, gewinn - ust_offen) * satz / 100.0 + ust_offen, 2)
     return {
+        "ust": ust,
+        "ust_offen": ust_offen,
         "jahr": jahr,
         "einnahmen": einnahme_summe,
         "ausgaben": ausgabe_summe,
         "gewinn": gewinn,
         "ruecklage_satz": satz,
-        "ruecklage": round(max(0.0, gewinn) * satz / 100.0, 2),
+        "ruecklage": ruecklage,
         "kategorien": sorted(({"name": k, "betrag": v} for k, v in nach_kategorie.items()),
                              key=lambda x: -x["betrag"]),
         "einnahmen_rechnungen": rechnungs_summe,
@@ -172,11 +180,309 @@ def steuerruecklage(conn, jahr) -> dict:
     return {
         "satz": satz,
         "bisher": z["ruecklage"],
+        "ust_offen": z["ust_offen"],
         "gewinn": z["gewinn"],
-        "hochrechnung": round(max(0.0, z["gewinn"] + offen["gestellt"]) * satz / 100.0, 2),
+        "hochrechnung": round(max(0.0, z["gewinn"] - z["ust_offen"] + offen["gestellt"])
+                              * satz / 100.0 + z["ust_offen"], 2),
         "hinweis": ("Empfehlung, kein Steuerbescheid. Der Satz lässt sich in den "
                     "Einstellungen ändern."),
     }
+
+
+# --------------------------------------------------------------------------
+# Umsatzsteuer: Voranmeldungen und Jahreswerte zum Abtippen in ELSTER
+# --------------------------------------------------------------------------
+# Rechnungen zaehlen nach Zahlungseingang (Ist-Versteuerung), Vorsteuer nach
+# dem Datum der Ausgabe. Allgemeine Rechenhilfe, keine Steuerberatung.
+
+KATEGORIE_UST_ZAHLUNG = "Umsatzsteuer an Finanzamt"
+KATEGORIE_UST_ERSTATTUNG = "Umsatzsteuer-Erstattung"
+
+
+def _anteil(brutto, satz) -> float:
+    """Steuer, die in einem Bruttobetrag steckt."""
+    brutto, satz = float(brutto or 0), float(satz or 0)
+    if satz <= 0:
+        return 0.0
+    return round(brutto - brutto / (1 + satz / 100.0), 2)
+
+
+def _monatsende(jahr: int, monat: int) -> date:
+    if monat == 12:
+        return date(jahr, 12, 31)
+    return date(jahr, monat + 1, 1) - timedelta(days=1)
+
+
+def _frist(bis: date, dauerfrist: bool) -> date:
+    """Der 10. des Folgemonats, mit Dauerfristverlaengerung einen Monat spaeter."""
+    monat, jahr = bis.month + (2 if dauerfrist else 1), bis.year
+    while monat > 12:
+        monat, jahr = monat - 12, jahr + 1
+    return date(jahr, monat, 10)
+
+
+def ust_zeitraeume(e: dict, jahr: int) -> list:
+    vierteljahr = (e.get("ust_rhythmus") or "monatlich") == "vierteljaehrlich"
+    dauer = (e.get("ust_dauerfrist") or "nein") == "ja"
+    liste = []
+    if vierteljahr:
+        for q in range(1, 5):
+            von, bis = date(jahr, 3 * q - 2, 1), _monatsende(jahr, 3 * q)
+            liste.append({"zeitraum": "%d-Q%d" % (jahr, q), "name": "%d. Quartal %d" % (q, jahr),
+                          "von": von.isoformat(), "bis": bis.isoformat(),
+                          "frist": _frist(bis, dauer).isoformat()})
+    else:
+        for m in range(1, 13):
+            von, bis = date(jahr, m, 1), _monatsende(jahr, m)
+            liste.append({"zeitraum": "%d-%02d" % (jahr, m), "name": "%s %d" % (MONATE[m - 1], jahr),
+                          "von": von.isoformat(), "bis": bis.isoformat(),
+                          "frist": _frist(bis, dauer).isoformat()})
+    return liste
+
+
+def ust_werte(conn, von: str, bis: str) -> dict:
+    """Alle Kennzahlen der Umsatzsteuer-Voranmeldung fuer einen Zeitraum."""
+    grundlage = {}          # Satz -> Nettobetrag der Umsaetze
+    posten_liste = []
+    for r in db.zeilen(conn, """
+            SELECT r.id, r.nummer, r.typ, r.bezahlt_am, r.netto, r.steuer, r.brutto,
+                   k.firma, k.vorname, k.nachname, k.art
+            FROM rechnungen r JOIN kunden k ON k.id = r.kunde_id
+            WHERE r.typ IN ('rechnung','storno') AND r.festgeschrieben = 1
+              AND r.bezahlt_am BETWEEN ? AND ?""", (von, bis)):
+        vz = -1 if r["typ"] == "storno" else 1
+        s = summen(db.zeilen(conn, "SELECT menge, einzelpreis, steuersatz FROM rechnungsposten "
+                                   "WHERE rechnung_id=?", (r["id"],)))
+        for z in s["steuerzeilen"]:
+            grundlage[z["satz"]] = round(grundlage.get(z["satz"], 0.0) + vz * z["grundlage"], 2)
+        posten_liste.append({"art": "Rechnung", "datum": r["bezahlt_am"], "nummer": r["nummer"],
+                             "text": kundenname(r), "netto": round(vz * float(r["netto"] or 0), 2),
+                             "steuer": round(vz * float(r["steuer"] or 0), 2)})
+    for x in db.zeilen(conn, "SELECT * FROM einnahmen WHERE datum BETWEEN ? AND ? "
+                             "AND COALESCE(steuersatz,0) > 0", (von, bis)):
+        st = _anteil(x["betrag"], x["steuersatz"])
+        netto = round(float(x["betrag"] or 0) - st, 2)
+        satz = float(x["steuersatz"])
+        grundlage[satz] = round(grundlage.get(satz, 0.0) + netto, 2)
+        posten_liste.append({"art": "Einnahme", "datum": x["datum"], "nummer": x.get("beleg_nummer") or "",
+                             "text": x.get("beschreibung") or "", "netto": netto, "steuer": st})
+
+    vorsteuer, ausland_netto, ausland_steuer = 0.0, 0.0, 0.0
+    ausgaben_liste = []
+    for tabelle in ("belege", "ausgaben"):
+        for a in db.zeilen(conn, "SELECT * FROM %s WHERE datum BETWEEN ? AND ?" % tabelle, (von, bis)):
+            if a.get("kategorie") == KATEGORIE_UST_ZAHLUNG:
+                continue
+            if a.get("ausland"):
+                satz = float(a.get("steuersatz") or 0) or 19.0
+                netto = float(a["betrag"] or 0)
+                st = round(netto * satz / 100.0, 2)
+                ausland_netto += netto
+                ausland_steuer += st
+                ausgaben_liste.append({"art": "Ausland", "datum": a["datum"], "text": a["beschreibung"],
+                                       "netto": netto, "steuer": st})
+            elif float(a.get("steuersatz") or 0) > 0:
+                st = _anteil(a["betrag"], a["steuersatz"])
+                vorsteuer += st
+                ausgaben_liste.append({"art": "Vorsteuer", "datum": a["datum"], "text": a["beschreibung"],
+                                       "netto": round(float(a["betrag"] or 0) - st, 2), "steuer": st})
+
+    # ELSTER verlangt die Bemessungsgrundlagen in ganzen Euro (abgerundet) und
+    # rechnet die Steuer darauf selbst aus.
+    def euro(w):
+        return int(w) if w >= 0 else -int(-w)
+    kz81 = euro(grundlage.get(19.0, 0.0))
+    kz86 = euro(grundlage.get(7.0, 0.0))
+    andere = {k: v for k, v in grundlage.items() if k not in (19.0, 7.0) and abs(v) > 0.005}
+    st81 = round(kz81 * 0.19, 2)
+    st86 = round(kz86 * 0.07, 2)
+    kz46 = euro(round(ausland_netto, 2))
+    kz47 = round(ausland_steuer, 2)
+    kz66 = round(vorsteuer, 2)
+    kz67 = kz47
+    kz83 = round(st81 + st86 + kz47 - kz66 - kz67, 2)
+    return {"kz81": kz81, "st81": st81, "kz86": kz86, "st86": st86,
+            "kz46": kz46, "kz47": kz47, "kz66": kz66, "kz67": kz67, "kz83": kz83,
+            "andere_saetze": [{"satz": k, "grundlage": v} for k, v in andere.items()],
+            "umsaetze": sorted(posten_liste, key=lambda x: x["datum"] or ""),
+            "ausgaben": sorted(ausgaben_liste, key=lambda x: x["datum"] or ""),
+            "leer": not posten_liste and not ausgaben_liste}
+
+
+def _meldung(conn, zeitraum: str) -> dict:
+    return db.zeile(conn, "SELECT * FROM ust_meldungen WHERE zeitraum=?", (zeitraum,)) or {}
+
+
+def ust_offen_betrag(conn) -> float:
+    """Umsatzsteuer, die schon eingenommen, aber noch nicht ans Finanzamt gezahlt ist."""
+    e = db.einstellungen_lesen(conn)
+    ab = e.get("ust_ab") or ""
+    if not ab:
+        return 0.0
+    heute = date.today()
+    offen = 0.0
+    for jahr in range(int(ab[:4]), heute.year + 1):
+        for z in ust_zeitraeume(e, jahr):
+            if z["bis"] < ab or z["von"] > heute.isoformat():
+                continue
+            if _meldung(conn, z["zeitraum"]).get("bezahlt_am"):
+                continue
+            offen += ust_werte(conn, max(z["von"], ab), z["bis"])["kz83"]
+    return round(max(0.0, offen), 2)
+
+
+def umsatzsteuer(conn, jahr) -> dict:
+    """Alles fuer die Seite Umsatzsteuer: Voranmeldungen eines Jahres und Jahreswerte."""
+    jahr = _jahr(jahr)
+    e = db.einstellungen_lesen(conn)
+    ab = e.get("ust_ab") or ""
+    pflichtig = e.get("kleinunternehmer") != "ja"
+    heute = date.today().isoformat()
+    meldungen = []
+    if ab:
+        for z in ust_zeitraeume(e, jahr):
+            if z["bis"] < ab or z["von"] > heute:
+                continue
+            w = ust_werte(conn, max(z["von"], ab), z["bis"])
+            m = _meldung(conn, z["zeitraum"])
+            laeuft = z["bis"] >= heute
+            z.update(w)
+            z.update({"uebermittelt_am": m.get("uebermittelt_am") or "",
+                      "bezahlt_am": m.get("bezahlt_am") or "",
+                      "gezahlt": float(m.get("betrag") or 0),
+                      "laeuft": laeuft,
+                      "ueberfaellig": not laeuft and not m.get("uebermittelt_am") and z["frist"] < heute})
+            meldungen.append(z)
+    meldungen.reverse()
+
+    jahr_von = max("%d-01-01" % jahr, ab) if ab else "%d-01-01" % jahr
+    jw = ust_werte(conn, jahr_von, "%d-12-31" % jahr) if ab else None
+    vorauszahlungen = round(sum(m["kz83"] for m in meldungen), 2)
+    jm = _meldung(conn, str(jahr))
+    naechste = None
+    for m in sorted(meldungen, key=lambda x: x["frist"]):
+        if not m["uebermittelt_am"] and not m["laeuft"]:
+            naechste = m
+            break
+    return {"jahr": jahr, "pflichtig": pflichtig, "ab": ab,
+            "rhythmus": e.get("ust_rhythmus") or "monatlich",
+            "dauerfrist": (e.get("ust_dauerfrist") or "nein") == "ja",
+            "meldungen": meldungen, "naechste": naechste,
+            "jahreswerte": dict(jw, vorauszahlungen=vorauszahlungen,
+                                abschluss=round(jw["kz83"] - vorauszahlungen, 2),
+                                frist="%d-07-31" % (jahr + 1),
+                                uebermittelt_am=jm.get("uebermittelt_am") or "",
+                                bezahlt_am=jm.get("bezahlt_am") or "",
+                                umsaetze=[], ausgaben=[]) if jw else None,
+            "euer": euer(conn, jahr)["ust"]}
+
+
+def ust_erinnerungen(conn) -> list:
+    """Hinweise fuer die Startseite: Meldungen, die bald faellig oder ueberfaellig sind."""
+    e = db.einstellungen_lesen(conn)
+    if not e.get("ust_ab"):
+        return []
+    heute = date.today()
+    hinweise = []
+    for jahr in {heute.year - 1, heute.year}:
+        for z in ust_zeitraeume(e, jahr):
+            if z["bis"] < e["ust_ab"] or z["bis"] >= heute.isoformat():
+                continue
+            if _meldung(conn, z["zeitraum"]).get("uebermittelt_am"):
+                continue
+            tage = (date.fromisoformat(z["frist"]) - heute).days
+            if tage < 0:
+                hinweise.append({"art": "warnung", "text": "Umsatzsteuer-Voranmeldung %s war am %s fällig "
+                                 "und ist noch nicht als übermittelt markiert."
+                                 % (z["name"], date.fromisoformat(z["frist"]).strftime("%d.%m.%Y"))})
+            elif tage <= 14:
+                hinweise.append({"art": "hinweis", "text": "Umsatzsteuer-Voranmeldung %s bis %s an das "
+                                 "Finanzamt übermitteln. Die Zahlen stehen unter Finanzen, Umsatzsteuer."
+                                 % (z["name"], date.fromisoformat(z["frist"]).strftime("%d.%m.%Y"))})
+    return hinweise
+
+
+def ust_vermerken(conn, zeitraum: str, aktion: str, datum: str = "", betrag=None, name: str = "") -> None:
+    """Uebermittelt / bezahlt markieren. Beim Bezahlen wird die Zahlung ans
+    Finanzamt (oder die Erstattung) gleich als Ausgabe bzw. Einnahme gebucht,
+    damit die Einnahmen-Ueberschuss-Rechnung stimmt."""
+    tag = datum or date.today().isoformat()
+    m = _meldung(conn, zeitraum)
+    with conn:
+        if not m:
+            conn.execute("INSERT INTO ust_meldungen (zeitraum) VALUES (?)", (zeitraum,))
+        if aktion == "uebermittelt":
+            conn.execute("UPDATE ust_meldungen SET uebermittelt_am=? WHERE zeitraum=?", (tag, zeitraum))
+        elif aktion == "bezahlt":
+            betrag = round(float(betrag or 0), 2)
+            _buchung_loeschen(conn, m.get("buchung") or "")
+            buchung = ""
+            if betrag > 0:
+                cur = conn.execute("""INSERT INTO ausgaben (datum, beschreibung, kategorie, betrag,
+                                      rhythmus, dateiname, steuersatz, ausland) VALUES (?,?,?,?,?,?,0,0)""",
+                                   (tag, "Umsatzsteuer %s" % name, KATEGORIE_UST_ZAHLUNG, betrag, "", ""))
+                buchung = "ausgaben:%d" % cur.lastrowid
+            elif betrag < 0:
+                nummer = db.naechste_nummer(conn, "E-{jahr}-{nummer}", 4, "beleg_nummer",
+                                            "einnahmen", jahr=tag[:4])
+                cur = conn.execute("""INSERT INTO einnahmen (datum, beschreibung, kategorie, betrag,
+                                      zahlungsart, beleg_nummer, dateiname, angelegt_am, steuersatz)
+                                      VALUES (?,?,?,?,?,?,?,?,0)""",
+                                   (tag, "Umsatzsteuer %s" % name, KATEGORIE_UST_ERSTATTUNG, -betrag,
+                                    "ueberweisung", nummer, "", datetime.now().isoformat(timespec="seconds")))
+                buchung = "einnahmen:%d" % cur.lastrowid
+            conn.execute("""UPDATE ust_meldungen SET bezahlt_am=?, betrag=?, buchung=?,
+                            uebermittelt_am=CASE WHEN uebermittelt_am='' THEN ? ELSE uebermittelt_am END
+                            WHERE zeitraum=?""", (tag, betrag, buchung, tag, zeitraum))
+        elif aktion == "zuruecksetzen":
+            _buchung_loeschen(conn, m.get("buchung") or "")
+            conn.execute("DELETE FROM ust_meldungen WHERE zeitraum=?", (zeitraum,))
+        db.protokollieren(conn, "Umsatzsteuer", aktion, "%s %s" % (name or zeitraum, tag))
+
+
+def _buchung_loeschen(conn, buchung: str) -> None:
+    if ":" in buchung:
+        tabelle, nr = buchung.split(":", 1)
+        if tabelle in ("ausgaben", "einnahmen"):
+            conn.execute("DELETE FROM %s WHERE id=?" % tabelle, (int(nr),))
+
+
+def _euer_umsatzsteuer(conn, einnahmen, direkte, belege, ausgaben) -> dict:
+    """Die Umsatzsteuer-Zeilen der Anlage EUER."""
+    vereinnahmt = 0.0
+    for r in einnahmen:
+        vereinnahmt += float(r.get("steuer") or 0) * (-1 if r["typ"] == "storno" else 1)
+    erstattet = 0.0
+    for x in direkte:
+        if x.get("kategorie") == KATEGORIE_UST_ERSTATTUNG:
+            erstattet += float(x["betrag"] or 0)
+        else:
+            vereinnahmt += _anteil(x["betrag"], x.get("steuersatz"))
+    vorsteuer, an_finanzamt = 0.0, 0.0
+    for a in list(belege) + list(ausgaben):
+        if a.get("kategorie") == KATEGORIE_UST_ZAHLUNG:
+            an_finanzamt += float(a["betrag"] or 0)
+        elif not a.get("ausland"):
+            vorsteuer += _anteil(a["betrag"], a.get("steuersatz"))
+    einnahmen_brutto = _summe([r["betrag"] for r in einnahmen] + [x["betrag"] for x in direkte])
+    ausgaben_brutto = _summe([a["betrag"] for a in list(belege) + list(ausgaben)])
+    return {"vereinnahmt": round(vereinnahmt, 2), "erstattet": round(erstattet, 2),
+            "vorsteuer": round(vorsteuer, 2), "an_finanzamt": round(an_finanzamt, 2),
+            "einnahmen_netto": round(einnahmen_brutto - vereinnahmt - erstattet, 2),
+            "ausgaben_netto": round(ausgaben_brutto - vorsteuer - an_finanzamt, 2)}
+
+
+def csv_umsatzsteuer(conn, jahr) -> str:
+    u = umsatzsteuer(conn, jahr)
+    k = lambda w: ("%.2f" % float(w or 0)).replace(".", ",")
+    reihen = []
+    for m in sorted(u["meldungen"], key=lambda x: x["von"]):
+        reihen.append([m["name"], m["frist"], m["kz81"], k(m["st81"]), m["kz86"], k(m["st86"]),
+                       m["kz46"], k(m["kz47"]), k(m["kz66"]), k(m["kz67"]), k(m["kz83"]),
+                       m["uebermittelt_am"], m["bezahlt_am"]])
+    return _csv(["Zeitraum", "Frist", "Kz 81 Umsatz 19 %", "Steuer 19 %", "Kz 86 Umsatz 7 %",
+                 "Steuer 7 %", "Kz 46 Leistungen Ausland", "Kz 47 Steuer Ausland", "Kz 66 Vorsteuer",
+                 "Kz 67 Vorsteuer Ausland", "Kz 83 Zahllast", "Übermittelt am", "Bezahlt am"], reihen)
 
 
 # --------------------------------------------------------------------------
@@ -352,15 +658,25 @@ def csv_ausgaben(conn, jahr) -> str:
                                 LEFT JOIN kunden k ON k.id=b.kunde_id
                                 WHERE b.datum BETWEEN ? AND ? ORDER BY b.datum""", (von, bis)):
         reihen.append([b["datum"], "Beleg", b["kategorie"], b["beschreibung"],
-                       ("%.2f" % (b["betrag"] or 0)).replace(".", ","), b["kdnr"] or "",
-                       b["dateiname"] or ""])
+                       ("%.2f" % (b["betrag"] or 0)).replace(".", ","), _ust_text(b),
+                       ("%.2f" % _anteil(b["betrag"], 0 if b.get("ausland") else b.get("steuersatz"))
+                        ).replace(".", ","), b["kdnr"] or "", b["dateiname"] or ""])
     for a in db.zeilen(conn, "SELECT * FROM ausgaben WHERE datum BETWEEN ? AND ? ORDER BY datum",
                        (von, bis)):
         reihen.append([a["datum"], "Betriebsausgabe", a["kategorie"], a["beschreibung"],
-                       ("%.2f" % (a["betrag"] or 0)).replace(".", ","), "", a["dateiname"] or ""])
+                       ("%.2f" % (a["betrag"] or 0)).replace(".", ","), _ust_text(a),
+                       ("%.2f" % _anteil(a["betrag"], 0 if a.get("ausland") else a.get("steuersatz"))
+                        ).replace(".", ","), "", a["dateiname"] or ""])
     reihen.sort(key=lambda r: r[0] or "")
-    return _csv(["Datum", "Art", "Kategorie", "Beschreibung", "Betrag", "Kundennummer", "Datei"],
-                reihen)
+    return _csv(["Datum", "Art", "Kategorie", "Beschreibung", "Betrag brutto", "Umsatzsteuer",
+                 "darin Vorsteuer", "Kundennummer", "Datei"], reihen)
+
+
+def _ust_text(a) -> str:
+    if a.get("ausland"):
+        return "Ausland (§ 13b)"
+    satz = float(a.get("steuersatz") or 0)
+    return ("%g %%" % satz).replace(".", ",") if satz else "keine"
 
 
 def csv_euer(conn, jahr) -> str:
@@ -371,6 +687,13 @@ def csv_euer(conn, jahr) -> str:
                ("%.2f" % z["einnahmen_direkt"]).replace(".", ",")],
               ["Ausgaben (Abfluss)", ("%.2f" % z["ausgaben"]).replace(".", ",")],
               ["Gewinn", ("%.2f" % z["gewinn"]).replace(".", ",")],
+              ["", ""],
+              ["Einnahmen ohne Umsatzsteuer", ("%.2f" % z["ust"]["einnahmen_netto"]).replace(".", ",")],
+              ["Vereinnahmte Umsatzsteuer", ("%.2f" % z["ust"]["vereinnahmt"]).replace(".", ",")],
+              ["Vom Finanzamt erstattete Umsatzsteuer", ("%.2f" % z["ust"]["erstattet"]).replace(".", ",")],
+              ["Ausgaben ohne Vorsteuer", ("%.2f" % z["ust"]["ausgaben_netto"]).replace(".", ",")],
+              ["Gezahlte Vorsteuer", ("%.2f" % z["ust"]["vorsteuer"]).replace(".", ",")],
+              ["An das Finanzamt gezahlte Umsatzsteuer", ("%.2f" % z["ust"]["an_finanzamt"]).replace(".", ",")],
               ["", ""], ["Ausgaben nach Kategorie", ""]]
     for k in z["kategorien"]:
         reihen.append([k["name"], ("%.2f" % k["betrag"]).replace(".", ",")])

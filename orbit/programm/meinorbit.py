@@ -65,8 +65,22 @@ def endpunkt(pfad: str, frage: dict, koerper: dict, methode: str):
         # ---- Einstellungen ---------------------------------------------
         if teile == ["api", "einstellungen"]:
             if methode == "POST":
+                vorher = e.get("kleinunternehmer")
                 db.einstellungen_schreiben(conn, koerper)
-                return {"ok": True, "einstellungen": db.einstellungen_lesen(conn)}, None, None
+                neu = db.einstellungen_lesen(conn)
+                # Wechsel zur Regelbesteuerung: Leistungen ohne Steuersatz bekommen den
+                # Regelsatz, und ab heute wird die Umsatzsteuer gemeldet.
+                if vorher == "ja" and neu.get("kleinunternehmer") == "nein":
+                    satz = float(neu.get("steuersatz") or 0) or 19.0
+                    with conn:
+                        conn.execute("UPDATE leistungen SET steuersatz=? WHERE COALESCE(steuersatz,0)=0",
+                                     (satz,))
+                    if float(neu.get("steuersatz") or 0) == 0:
+                        db.einstellungen_schreiben(conn, {"steuersatz": "19"})
+                    if not neu.get("ust_ab"):
+                        db.einstellungen_schreiben(conn, {"ust_ab": date.today().isoformat()})
+                    neu = db.einstellungen_lesen(conn)
+                return {"ok": True, "einstellungen": neu}, None, None
             return {"einstellungen": e,
                     "leistungen": db.zeilen(conn, "SELECT * FROM leistungen ORDER BY name"),
                     "protokoll": db.zeilen(conn, "SELECT * FROM protokoll ORDER BY id DESC LIMIT 60"),
@@ -189,7 +203,8 @@ def endpunkt(pfad: str, frage: dict, koerper: dict, methode: str):
                 dateiname = _datei_uebernehmen(conn, daten, "belege")
                 if daten.get("id"):
                     felder = {k: daten[k] for k in ("kunde_id", "auftrag_id", "datum", "beschreibung",
-                                                    "kategorie", "betrag", "weiterberechnen")
+                                                    "kategorie", "betrag", "weiterberechnen",
+                                                    "steuersatz", "ausland")
                               if k in daten}
                     if dateiname:
                         felder["dateiname"] = dateiname
@@ -201,14 +216,16 @@ def endpunkt(pfad: str, frage: dict, koerper: dict, methode: str):
                 else:
                     with conn:
                         conn.execute("""INSERT INTO belege (kunde_id, auftrag_id, datum, beschreibung,
-                                        kategorie, betrag, weiterberechnen, dateiname)
-                                        VALUES (?,?,?,?,?,?,?,?)""",
+                                        kategorie, betrag, weiterberechnen, dateiname, steuersatz, ausland)
+                                        VALUES (?,?,?,?,?,?,?,?,?,?)""",
                                      (daten.get("kunde_id"), daten.get("auftrag_id"),
                                       daten.get("datum") or date.today().isoformat(),
                                       daten.get("beschreibung") or "",
                                       daten.get("kategorie") or "Sonstiges",
                                       float(daten.get("betrag") or 0),
-                                      1 if daten.get("weiterberechnen") else 0, dateiname))
+                                      1 if daten.get("weiterberechnen") else 0, dateiname,
+                                      float(daten.get("steuersatz") or 0),
+                                      1 if daten.get("ausland") else 0))
                 return {"ok": True}, None, None
             if methode == "DELETE":
                 conn.execute("DELETE FROM belege WHERE id=? AND abgerechnet=0", (koerper.get("id"),))
@@ -227,7 +244,7 @@ def endpunkt(pfad: str, frage: dict, koerper: dict, methode: str):
                 with conn:
                     if daten.get("id"):
                         felder = {k: daten[k] for k in ("datum", "beschreibung", "kategorie",
-                                                        "betrag", "zahlungsart", "kunde_id")
+                                                        "betrag", "zahlungsart", "kunde_id", "steuersatz")
                                   if k in daten}
                         if dateiname:
                             felder["dateiname"] = dateiname
@@ -243,13 +260,14 @@ def endpunkt(pfad: str, frage: dict, koerper: dict, methode: str):
                                                     "einnahmen", jahr=wann[:4])
                         conn.execute("""INSERT INTO einnahmen (datum, beschreibung, kategorie,
                                         betrag, zahlungsart, kunde_id, beleg_nummer, dateiname,
-                                        angelegt_am) VALUES (?,?,?,?,?,?,?,?,?)""",
+                                        angelegt_am, steuersatz) VALUES (?,?,?,?,?,?,?,?,?,?)""",
                                      (wann, daten.get("beschreibung") or "",
                                       daten.get("kategorie") or "Barverkauf",
                                       float(daten.get("betrag") or 0),
                                       daten.get("zahlungsart") or "bar",
                                       _int(daten.get("kunde_id")), nummer, dateiname,
-                                      datetime.now().isoformat(timespec="seconds")))
+                                      datetime.now().isoformat(timespec="seconds"),
+                                      float(daten.get("steuersatz") or 0)))
                         db.protokollieren(conn, "Einnahme", "gebucht",
                                           "%s über %.2f €" % (nummer, float(daten.get("betrag") or 0)))
                 return {"ok": True}, None, None
@@ -271,7 +289,8 @@ def endpunkt(pfad: str, frage: dict, koerper: dict, methode: str):
                 with conn:
                     if daten.get("id"):
                         felder = {k: daten[k] for k in ("datum", "beschreibung", "kategorie",
-                                                        "betrag", "rhythmus") if k in daten}
+                                                        "betrag", "rhythmus", "steuersatz", "ausland")
+                                  if k in daten}
                         if dateiname:
                             felder["dateiname"] = dateiname
                         conn.execute("UPDATE ausgaben SET %s WHERE id=?"
@@ -280,18 +299,30 @@ def endpunkt(pfad: str, frage: dict, koerper: dict, methode: str):
                         _datei_nachziehen(conn, "ausgaben", daten["id"])
                     else:
                         conn.execute("""INSERT INTO ausgaben (datum, beschreibung, kategorie,
-                                        betrag, rhythmus, dateiname) VALUES (?,?,?,?,?,?)""",
+                                        betrag, rhythmus, dateiname, steuersatz, ausland)
+                                        VALUES (?,?,?,?,?,?,?,?)""",
                                      (daten.get("datum") or date.today().isoformat(),
                                       daten.get("beschreibung") or "",
                                       daten.get("kategorie") or "Sonstiges",
                                       float(daten.get("betrag") or 0),
-                                      daten.get("rhythmus") or "", dateiname))
+                                      daten.get("rhythmus") or "", dateiname,
+                                      float(daten.get("steuersatz") or 0),
+                                      1 if daten.get("ausland") else 0))
                 return {"ok": True}, None, None
             if methode == "DELETE":
                 conn.execute("DELETE FROM ausgaben WHERE id=?", (koerper.get("id"),))
                 conn.commit()
                 return {"ok": True}, None, None
             return {"ausgaben": db.zeilen(conn, "SELECT * FROM ausgaben ORDER BY datum DESC, id DESC")}, None, None
+
+        # ---- Umsatzsteuer ------------------------------------------------
+        if teile == ["api", "umsatzsteuer"]:
+            if methode == "POST":
+                finanzen.ust_vermerken(conn, str(koerper.get("zeitraum") or ""),
+                                       str(koerper.get("aktion") or ""), str(koerper.get("datum") or ""),
+                                       koerper.get("betrag"), str(koerper.get("name") or ""))
+                return {"ok": True}, None, None
+            return finanzen.umsatzsteuer(conn, f("jahr", str(date.today().year))), None, None
 
         # ---- Finanzen ----------------------------------------------------
         if teile == ["api", "finanzen"]:
@@ -593,7 +624,7 @@ def seiten(pfad: str, frage: dict):
         if pfad == "/kalender.ics":
             return kalender.ics(conn).encode("utf-8"), "text/calendar; charset=utf-8", "MeinOrbit.ics"
 
-        treffer = re.match(r"^/ausgabe/(rechnungen|einnahmen|ausgaben|euer|kunden)\.csv$", pfad)
+        treffer = re.match(r"^/ausgabe/(rechnungen|einnahmen|ausgaben|euer|kunden|umsatzsteuer)\.csv$", pfad)
         if treffer:
             jahr = (frage.get("jahr", [str(date.today().year)]) or [""])[0]
             welche = treffer.group(1)
@@ -601,6 +632,7 @@ def seiten(pfad: str, frage: dict):
                     "einnahmen": lambda: finanzen.csv_einnahmen(conn, jahr),
                     "ausgaben": lambda: finanzen.csv_ausgaben(conn, jahr),
                     "euer": lambda: finanzen.csv_euer(conn, jahr),
+                    "umsatzsteuer": lambda: finanzen.csv_umsatzsteuer(conn, jahr),
                     "kunden": lambda: finanzen.csv_kunden(conn)}[welche]()
             name = "%s-%s.csv" % (welche, jahr) if welche != "kunden" else "kunden.csv"
             return ("﻿" + text).encode("utf-8"), "text/csv; charset=utf-8", name
